@@ -1,0 +1,10 @@
+name: posaja-microsite
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: unigo-fe-posaja
+    ports:
+      - "8081:3001"
+    command: ["pnpm", "preview"]
