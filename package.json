@@ -5,13 +5,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "dotenvx run -f .env -- vite",
-    "build:sandbox": "tsc -b && dotenvx run -f .env.sandbox -- vite build",
-    "build": "tsc -b && dotenvx run -f .env.production -- vite build",
+    "dev": "vite",
+    "build:sandbox": "tsc -b && build",
+    "build": "tsc -b && vite build",
     "format": "npx @biomejs/biome format --write ./",
     "lint": "npx @biomejs/biome lint --write ./",
-    "preview:sandbox": "dotenvx run -f .env.sandbox -- vite preview",
-    "preview": "dotenvx run -f .env.production -- vite preview"
+    "preview:sandbox": "vite preview",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^1.24.0",
