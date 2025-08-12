@@ -1,4 +1,7 @@
 {
-    "rewrites": [{ "source": "/(.*)", "destination": "/" }]
-  }
-  
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" },
+    { "source": "/api-kurir/:path*", "destination": "https://api-kurir.posfin.id/api/v1/kurir/:path*" },
+    { "source": "/api-mu/:path*",    "destination": "http://117.102.70.147:9970/api/v1/kurir/:path*" }
+  ]
+}
