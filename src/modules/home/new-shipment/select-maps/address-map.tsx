@@ -75,6 +75,58 @@ async function reverseGeocodeHere(
     return null;
   }
 }
+async function reverseGeocodeGoogle(
+  lat: number,
+  lng: number
+): Promise<{ formattedAddress: string; route?: string; streetNumber?: string } | null> {
+  return new Promise((resolve) => {
+    if (!('google' in window)) return resolve(null);
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results?.[0]) {
+        const r = results[0];
+        const comps = r.address_components || [];
+        const get = (t: string) =>
+          comps.find((c) => c.types.includes(t))?.long_name || '';
+        resolve({
+          formattedAddress: r.formatted_address || '',
+          route: get('route'),
+          streetNumber: get('street_number'),
+        });
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
+async function resolveAddressHybrid(
+  lat: number,
+  lng: number
+): Promise<LocationDetails | null> {
+  const [h, g] = await Promise.all([
+    reverseGeocodeHere(lat, lng),
+    reverseGeocodeGoogle(lat, lng),
+  ]);
+
+  if (!h && !g) return null;
+
+  // label dari Google (route + street number) jika ada, fallback ke label HERE
+  const googleLabel = [g?.route, g?.streetNumber].filter(Boolean).join(' ').trim();
+
+  return {
+    address: g?.formattedAddress || h?.address || '',
+    label: googleLabel || h?.label || '',
+    city: h?.city || '',
+    province: h?.province || '',
+    district: h?.district || '',
+    subdistrict: h?.subdistrict || '',
+    postalCode: h?.postalCode || '', // ← tetap dari HERE
+    lat,
+    lng,
+  };
+}
+
 
 function toAddressData(d: LocationDetails): AddressData {
   return {
@@ -122,6 +174,8 @@ function useMapReady(): [boolean] {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     if (!map) return;
+    
+    
     setReady(false);
     const off1 = map.addListener("tilesloaded", () => setReady(true));
     const off2 = map.addListener("idle", () => setReady(true));
@@ -171,7 +225,7 @@ const PickupAddress: React.FC = () => {
     // fetch detail pertama kali
     
     (async () => {
-      const d = await reverseGeocodeHere(initialCenter.lat, initialCenter.lng);
+      const d = await resolveAddressHybrid(initialCenter.lat, initialCenter.lng);
       if (d) {
         setDetails(d);
         const payload = toAddressData(d);
@@ -180,7 +234,6 @@ const PickupAddress: React.FC = () => {
         else if (currentStep === StepEnum.RECEIVER) setReceiverAddress(payload);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCenter.lat, initialCenter.lng]);
 
   const overallLoading = geoLoading || !mapReady;
@@ -196,7 +249,7 @@ const PickupAddress: React.FC = () => {
   const setPosAndResolve = useCallback(
     async (pos: LatLng) => {
       setMarkerPosition(pos);
-      const d = await reverseGeocodeHere(pos.lat, pos.lng);
+      const d = await resolveAddressHybrid(pos.lat, pos.lng);
       if (!d) return;
       setDetails(d);
       setAddressText(d.address); 
@@ -228,9 +281,8 @@ const PickupAddress: React.FC = () => {
     geocoderRef.current.geocode({ address: searchQuery }, (results, status) => {
       if (status === "OK" && results?.[0]) {
         const loc = results[0].geometry.location;
-        const pos = { lat: loc.lat(), lng: loc.lng() };
-        panTo(pos);
-        setPosAndResolve(pos);
+        goTo({ lat: loc.lat(), lng: loc.lng() });   // 👈 one call does all
+
       }
     });
   };
@@ -264,25 +316,34 @@ const PickupAddress: React.FC = () => {
   
     navigate(`/new-shipment?step=${currentStep}`);
   };
+  const goTo = useCallback((pos: LatLng) => {
+    // move marker + resolve HERE/Google (updates details & atoms)
+    setPosAndResolve(pos);
+    // center/zoom map to that marker
+    panTo(pos);
+  }, [panTo, setPosAndResolve]);
 
 
     return (
       <div className="w-full">
         {/* Map wrapper */}
         <div
-          className={
-            `relative mt-5 h-[360px] min-h-[360px] w-full` +
-            (isFullScreen ? " fixed inset-0 z-[9999] bg-white" : "")
-          }
-        >
+  className={
+    isFullScreen
+      ? "fixed inset-0 z-[9999] m-0 h-[100dvh] min-h-[100dvh] w-[100vw] bg-white"
+      : "relative mt-5 h-[360px] min-h-[360px] w-full"
+  }
+>
           {/* Search box */}
           <div className="absolute top-4 right-4 left-4 z-20">
             <div className="flex items-center gap-2 rounded-lg bg-white p-2 shadow">
+              
               <PlaceAutocompleteInput
                 value={searchQuery}
                 onChange={setSearchQuery}
-                onPlaceSelect={(pos) => { panTo(pos); setPosAndResolve(pos); }}
-                countryRestriction="id"
+                onPlaceSelect={(pos) => {            // pos: { lat, lng }
+                  goTo(pos);
+                }}                countryRestriction="id"
                 className="!h-12 rounded-[16px] px-4 text-[15px]"
               />
               <Button
@@ -299,10 +360,12 @@ const PickupAddress: React.FC = () => {
             <GoogleMap
               defaultZoom={13}
               defaultCenter={initialCenter}
+              // center={markerPosition}       
               onClick={handleMapClick}
+              
               streetViewControl={false}
               mapTypeControl={false}
-              fullscreenControl
+              fullscreenControl={true}
               cameraControl={false}
               className={`absolute inset-0 transition-opacity duration-200 ${
                 overallLoading ? "opacity-0" : "opacity-100"
@@ -323,8 +386,8 @@ const PickupAddress: React.FC = () => {
           {/* Controls */}
           <div className="absolute right-4 bottom-6 z-10 flex gap-2">
             <Button
-              onClick={() => { panTo(markerPosition); setPosAndResolve(markerPosition); }}
-              className="rounded-full border bg-white p-2 shadow-md"
+  onClick={() => { goTo(markerPosition); }}
+  className="rounded-full border bg-white p-2 shadow-md"
             >
               <MapPin className="h-5 w-5 text-blue-500" />
             </Button>
