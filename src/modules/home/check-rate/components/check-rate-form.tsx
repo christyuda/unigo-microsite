@@ -57,47 +57,62 @@ const checkRateSchema = z
     valueGoods: z.string().min(1, "Nilai kiriman tidak boleh kosong"),
     isInsurance: z.boolean(),
   })
-  .superRefine(({ itemTypeId, weight, length, width, height }, ctx) => {
-    if (itemTypeId === "0" && Number(weight) > 2000) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Maksimal berat isi kiriman surat adalah 2000 gram",
-        path: ["weight"],
-      });
-    }
+  .superRefine(
+    (
+      { itemTypeId, weight, length, width, height, isInsurance, valueGoods },
+      ctx
+    ) => {
+      if (itemTypeId === "0" && Number(weight) > 2000) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Maksimal berat isi kiriman surat adalah 2000 gram",
+          path: ["weight"],
+        });
+      }
 
-    if (itemTypeId === "1" && Number(weight) > 50000) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Maksimal berat isi kiriman paket adalah 50000 gram",
-        path: ["weight"],
-      });
-    }
+      if (itemTypeId === "1" && Number(weight) > 50000) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Maksimal berat isi kiriman paket adalah 50000 gram",
+          path: ["weight"],
+        });
+      }
 
-    if (Number(length) > 150) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Maksimal panjang kiriman adalah 150cm",
-        path: ["length"],
-      });
-    }
+      if (Number(length) > 150) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Maksimal panjang kiriman adalah 150cm",
+          path: ["length"],
+        });
+      }
 
-    if (Number(width) > 150) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Maksimal lebar kiriman adalah 150cm",
-        path: ["width"],
-      });
-    }
+      if (Number(width) > 150) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Maksimal lebar kiriman adalah 150cm",
+          path: ["width"],
+        });
+      }
 
-    if (Number(height) > 150) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Maksimal tinggi kiriman adalah 150cm",
-        path: ["height"],
-      });
+      if (Number(height) > 150) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Maksimal tinggi kiriman adalah 150cm",
+          path: ["height"],
+        });
+      }
+      if (isInsurance) {
+        const val = Number(valueGoods ?? 0);
+        if (!valueGoods || isNaN(val) || val <= 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Nilai kiriman wajib diisi saat menggunakan asuransi",
+            path: ["valueGoods"],
+          });
+        }
+      }
     }
-  });
+  );
 
 export default function CheckRateForm() {
   const navigate = useNavigate();
@@ -142,6 +157,7 @@ export default function CheckRateForm() {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<CheckRatePayload>({
     resolver: zodResolver(checkRateSchema),
@@ -155,10 +171,18 @@ export default function CheckRateForm() {
       width: String(checkRatePayload.width) ?? "",
       height: String(checkRatePayload.height) ?? "",
       diameter: String(checkRatePayload.diameter) ?? "0",
-      valueGoods: String(checkRatePayload.valueGoods) ?? "",
+      valueGoods: String(checkRatePayload.valueGoods ?? 0),
       isInsurance: false,
     },
   });
+  const isInsurance = watch("isInsurance");
+
+  // When insurance is toggled OFF, reset valueGoods to "0"
+  useEffect(() => {
+    if (!isInsurance) {
+      setValue("valueGoods", "0", { shouldValidate: true, shouldDirty: true });
+    }
+  }, [isInsurance, setValue]);
 
   useEffect(() => {
     const setAddressValue = (field: keyof CheckRatePayload, origin: string) => {
@@ -306,32 +330,7 @@ export default function CheckRateForm() {
             />
           </div>
         </div>
-        <div className="flex flex-col items-start gap-2">
-          {errors.valueGoods && (
-            <p className="text-red-500 text-sm">{errors.valueGoods.message}</p>
-          )}
-          <Label
-            htmlFor="valueGoods"
-            className="font-medium text-gray-900 text-lg"
-          >
-            Nilai isi kiriman (rupiah)
-          </Label>
-          <div className="flex w-full items-center gap-2">
-            <CoinsIcon className="text-brand-500" />
-            <Controller
-              control={control}
-              name="valueGoods"
-              render={({ field: { value, onChange } }) => (
-                <CurrencyInput
-                  className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
-                  value={value}
-                  onChange={onChange}
-                  placeholder="Ketik besaran nilai isi kiriman"
-                />
-              )}
-            />
-          </div>
-        </div>
+
         <div className="flex flex-col items-start gap-2">
           {errors.weight && (
             <p className="text-red-500 text-sm">{errors.weight.message}</p>
@@ -373,50 +372,93 @@ export default function CheckRateForm() {
           >
             Dimensi Kiriman (cm)
           </Label>
-          <div className="flex w-full items-center gap-2">
+          <div className="flex w-full items-start gap-2">
             <FileBoxIcon className="shrink-0 text-brand-500" size={20} />
-            <div className="flex gap-3">
-              <Controller
-                control={control}
-                name="length"
-                render={({ field: { value, onChange } }) => (
-                  <Input
-                    value={value}
-                    type="number"
-                    className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
-                    placeholder="Panjang"
-                    onChange={onChange}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="width"
-                render={({ field: { value, onChange } }) => (
-                  <Input
-                    value={value}
-                    type="number"
-                    className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
-                    placeholder="Lebar"
-                    onChange={onChange}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="height"
-                render={({ field: { value, onChange } }) => (
-                  <Input
-                    value={value}
-                    type="number"
-                    className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
-                    placeholder="Tinggi"
-                    onChange={onChange}
-                  />
-                )}
-              />
+
+            <div className="grid w-full grid-cols-3 gap-3">
+              {/* Panjang */}
+              <div className="space-y-1">
+                <Label
+                  htmlFor="lengthCm"
+                  className="text-sm font-medium text-gray-900"
+                >
+                  Panjang 
+                </Label>
+                <Controller
+                  control={control}
+                  name="length"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      id="lengthCm"
+                      value={value}
+                      type="number"
+                      className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
+                      placeholder="cth: 20"
+                      onChange={onChange}
+                    />
+                  )}
+                />
+      {errors.length && (
+        <p className="text-red-500 text-xs">{errors.length.message}</p>
+      )}
+              </div>
+
+              {/* Lebar */}
+              <div className="space-y-1">
+                <Label
+                  htmlFor="widthCm"
+                  className="text-sm font-medium text-gray-900"
+                >
+                  Lebar
+                </Label>
+                <Controller
+                  control={control}
+                  name="width"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      id="widthCm"
+                      value={value}
+                      type="number"
+                      className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
+                      placeholder="cth: 15"
+                      onChange={onChange}
+                    />
+                  )}
+                />
+                {errors.width && (
+        <p className="text-red-500 text-xs">{errors.width.message}</p>
+      )}
+              </div>
+
+              {/* Tinggi */}
+              <div className="space-y-1">
+                <Label
+                  htmlFor="heightCm"
+                  className="text-sm font-medium text-gray-900"
+                >
+                  Tinggi
+                </Label>
+                <Controller
+                  control={control}
+                  name="height"
+                  render={({ field: { value, onChange } }) => (
+                    <Input
+                      id="heightCm"
+                      value={value}
+                      type="number"
+                      className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
+                      placeholder="cth: 10"
+                      onChange={onChange}
+                    />
+                  )}
+                />
+{errors.height && (
+        <p className="text-red-500 text-xs">{errors.height.message}</p>
+      )}
+              </div>
             </div>
           </div>
+
           <div className="mt-4 flex items-center space-x-2">
             <Controller
               control={control}
@@ -433,6 +475,36 @@ export default function CheckRateForm() {
             <Label htmlFor="airplane-mode">Menggunakan asuransi</Label>
           </div>
         </div>
+        {isInsurance && (
+          <div className="flex flex-col items-start gap-2">
+            {errors.valueGoods && (
+              <p className="text-red-500 text-sm">
+                {errors.valueGoods.message}
+              </p>
+            )}
+            <Label
+              htmlFor="valueGoods"
+              className="font-medium text-gray-900 text-lg"
+            >
+              Nilai isi kiriman (rupiah)
+            </Label>
+            <div className="flex w-full items-center gap-2">
+              <CoinsIcon className="text-brand-500" />
+              <Controller
+                control={control}
+                name="valueGoods"
+                render={({ field: { value, onChange } }) => (
+                  <CurrencyInput
+                    className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
+                    value={value}
+                    onChange={onChange}
+                    placeholder="Ketik besaran nilai isi kiriman"
+                  />
+                )}
+              />
+            </div>
+          </div>
+        )}
       </div>
       <div className="mt-auto mb-3 py-6">
         <Button

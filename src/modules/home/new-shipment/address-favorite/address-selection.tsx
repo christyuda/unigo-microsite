@@ -32,14 +32,20 @@ import {
   getMerchantUserId,
 } from "@/lib/utils";
 
-/* helpers */
-const toHumanLabel = (raw?: string) => {
-  const t = (raw ?? "").toLowerCase();
-  if (t.includes("sender")) return "Alamat Pengirim";
-  if (t.includes("receiver")) return "Alamat Penerima";
-  return "Alamat Tersimpan";
-};
 
+  // take the first line, then the part before the first comma
+  const deriveShort = (text?: string) => {
+    if (!text) return "";
+    const firstLine = text.split("\n")[0];
+    return firstLine.split(",")[0].trim();
+  };
+  
+  // fallback from structured parts if needed
+  const deriveShortFromParts = (a: AddressApiItem) => {
+    const parts = [a.villageName, a.districtName, a.cityName].filter(Boolean);
+    return parts.join(", ").trim();
+  };
+  
 // map API item -> AddressData (atom)
 const toAddressData = (a: AddressApiItem): AddressData => {
   const { main, noteLabel, courierNote } = splitAddressNotes(a.address);
@@ -59,6 +65,7 @@ const toAddressData = (a: AddressApiItem): AddressData => {
     zipCode: Number(a.zipCode || 0),
     longitude: a.longitude ?? "",
     latitude: a.latitude ?? "",
+    shortlabel: deriveShort(main) || deriveShortFromParts(a) || a.customerName || "Alamat",
     noteLabel,
     courierNote,
   };
@@ -98,7 +105,7 @@ const AddressSelection: React.FC = () => {
   const { data, loading, error, refetch } = useAddressList(
     merchantUserId,
     addressTypeId,
-    false,
+    true,
   );
 
   // filter & sort di client
@@ -170,7 +177,7 @@ const AddressSelection: React.FC = () => {
     // save ke history
     addhistory({
       id: `${Date.now()}`,
-      addressTypeName: tab === "sender" ? "Alamat Pengirim" : "Alamat Penerima",
+      label :payload.shortlabel,
       customerName: payload.customerName,
       phone: payload.phone,
       address: payload.address,
@@ -224,15 +231,17 @@ const AddressSelection: React.FC = () => {
             const preview = parsed
               ? `${parsed.village}, ${parsed.district}, ${parsed.city}, ${parsed.zipCode}`
               : addr.address;
-
+              const { main } = splitAddressNotes(addr.address);
+              const short = (addr as any).shortLabel || deriveShort(main) || deriveShortFromParts(addr);
+              
             return (
               <AddressCard
-                key={key} // <-- key di elemen paling luar dalam map
+                key={key} 
                 id={addr.id}
-                label={toHumanLabel(addr.addressTypeName)}
+                label={short}
                 name={addr.customerName}
                 address={preview}
-                withActions // hapus kalau AddressCard tak butuh actions
+                withActions 
                 isSelected={selectedName === addr.customerName}
                 onSelect={() => setSelectedName(addr.customerName)}
                 onConfirm={() => handleConfirm(addr)}

@@ -45,7 +45,7 @@ const PickupAddressContent: React.FC = () => {
     const keyword = (searchQuery ?? "").toLowerCase();
     return history.filter((item) => {
       return (
-        (item.addressTypeName ?? "").toLowerCase().includes(keyword) ||
+        (item.label ?? "").toLowerCase().includes(keyword) ||
         (item.customerName ?? "").toLowerCase().includes(keyword) ||
         (item.address ?? "").toLowerCase().includes(keyword) ||
         (item.zipCode ?? "").toString().toLowerCase().includes(keyword)
@@ -55,18 +55,19 @@ const PickupAddressContent: React.FC = () => {
 
   const handleSelect = (id: string) => setSelectedId(id);
 
-  const prettyType = (raw?: string) => {
-    const t = (raw ?? "").toLowerCase();
+  const prettyType = (label?: string, rawType?: string) => {
+    if (label && label.trim()) return label; // ✅ Prefer HERE label
+    const t = (rawType ?? "").toLowerCase();
     if (t.includes("receiver")) return "Alamat Penerima";
     if (t.includes("sender") || t.includes("pickup")) return "Alamat Pengirim";
     return "Pilihan dari Peta";
   };
-
-  // helper: convert history entry -> AddressData (minimal yang kita punya dari history)
+  
   const toAddressData = (entry: {
     name: string;
     address: string;
     phone?: string;
+    shortLabel?: string; 
     postalCode: string | number;
   }): AddressData => {
     const zip = Number(entry.postalCode) || 0;
@@ -102,6 +103,7 @@ const PickupAddressContent: React.FC = () => {
       name: address.name,
       address: address.address,
       phone: address.phone,
+      shortLabel: address.label, 
       postalCode: address.postalCode,
     });
 
@@ -171,7 +173,7 @@ const PickupAddressContent: React.FC = () => {
           {filteredHistory.map((item) => (
             <SearchHistoryCard
               key={item.id}
-              title={prettyType(item.addressTypeName)}
+              title={prettyType(item.label)}
               subtitle={item.customerName}
               subsubtitle={item.address}
               isSelected={selectedId === item.id}
@@ -180,7 +182,7 @@ const PickupAddressContent: React.FC = () => {
               onConfirm={() =>
                 handleConfirmAddress({
                   id: item.id,
-                  label: prettyType(item.addressTypeName),
+                  label: prettyType(item.label),
                   name: item.customerName,
                   address: item.address,
                   phone: item.phone,

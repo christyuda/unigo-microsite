@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, fetchApi } from "@/lib/utils";
+import { getMerchantUserId, buildAddressCreateBody,  } from "@/lib/utils";
 
 import type { CourierService } from "@/types/types";
 
@@ -24,6 +25,8 @@ import {
   schedulePickupDataAtom,
   senderAddressDataAtom,
   receiverAddressDataAtom,
+  receiverFormAtom,
+  senderFormAtom,
 } from "@/atom/shipments-atom";
 
 const inputStyle = "h-[56px] rounded-xl text-sm";
@@ -52,6 +55,8 @@ const ShipmentDetailForm: React.FC = () => {
   const setSchedulePickup = useSetAtom(schedulePickupDataAtom);
   const senderAddress = useAtomValue(senderAddressDataAtom);
   const receiverAddress = useAtomValue(receiverAddressDataAtom);
+  const senderForm = useAtomValue(senderFormAtom);
+const receiverForm = useAtomValue(receiverFormAtom);
 
   // local state
   const [isInsured, setIsInsured] = useState(itemData.IsInsurance === "1");
@@ -175,8 +180,49 @@ const ShipmentDetailForm: React.FC = () => {
 
     checkFee();
   };
-
-  const handleNextStep = () => {
+  const saveFavoritesIfNeeded = async () => {
+    const merchantUserId = getMerchantUserId();
+    const tasks: Promise<any>[] = [];
+  
+    if (senderForm?.isFavorite && senderAddress) {
+      const body = buildAddressCreateBody({
+        who: "sender",
+        merchantUserId,
+        data: senderAddress,
+        isFavorite: true,
+      });
+      tasks.push(
+        fetchApi("address/create", {
+          method: "post",
+          body: JSON.stringify(body),
+        }).then((res) => {
+          if (res.code !== "000") throw new Error(res.message || "Create sender favorite failed");
+        })
+      );
+    }
+  
+    if (receiverForm?.isFavorite && receiverAddress) {
+      const body = buildAddressCreateBody({
+        who: "receiver",
+        merchantUserId,
+        data: receiverAddress,
+        isFavorite: true,
+      });
+      tasks.push(
+        fetchApi("address/create", {
+          method: "post",
+          body: JSON.stringify(body),
+        }).then((res) => {
+          if (res.code !== "000") throw new Error(res.message || "Create receiver favorite failed");
+        })
+      );
+    }
+  
+    if (tasks.length) {
+      await Promise.allSettled(tasks); // don’t block the user if one fails
+    }
+  };
+  const handleNextStep = async ()  => {
     if (!selectedService) {
       toast.error("Silakan pilih layanan pengiriman terlebih dahulu.");
       return;
@@ -192,7 +238,12 @@ const ShipmentDetailForm: React.FC = () => {
       toast.error("Alamat pengirim/penerima belum lengkap.");
       return;
     }
-
+    try {
+      await saveFavoritesIfNeeded();
+    } catch (e) {
+      toast.error(`Gagal menyimpan alamat favorit: ${e instanceof Error ? e.message : "Unknown error"}`);
+      return;
+    }
     // commit service & fee
     setProductId(String(chosen.serviceCode));
     setProductName(chosen.serviceName);
@@ -225,6 +276,8 @@ const ShipmentDetailForm: React.FC = () => {
         availablePickupRequest: null,
       }),
     }));
+
+    
 
     navigate("/create-shipment");
   };

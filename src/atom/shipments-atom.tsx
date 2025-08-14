@@ -21,6 +21,7 @@ export type AddressData = {
   latitude: string;
   noteLabel?: string; // optional if you want to keep it here
   courierNote?: string; // optional if you want to keep it here
+  shortlabel?: string; // optional, for quick reference
 };
 
 export type ItemData = {
@@ -82,6 +83,9 @@ export const emptyAddress = (): AddressData => ({
   zipCode: 0,
   longitude: "",
   latitude: "",
+  noteLabel: "",
+  courierNote: "",
+  shortlabel: "", 
 });
 
 export const defaultItemData = (): ItemData => ({
@@ -198,7 +202,7 @@ export const orderPayloadAtom = atom<OrderShipmentPayload>((get) => ({
 /* ---------- Address history ---------- */
 export type AddressHistory = {
   id: string; // unique ID
-  addressTypeName: string; // e.g., "Alamat Pengirim" / "Alamat Penerima"
+  label?: string; // optional label for quick reference
   customerName: string;
   phone: string;
   address: string;

@@ -25,6 +25,7 @@ import { Loader2, MapPin, Maximize2, Minimize2 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAddressHistory } from "@/hooks/useAddressHistory";
+import PlaceAutocompleteInput from "../components/place-autocomplete-input";
 
 /* ───────── helpers ───────── */
 
@@ -39,11 +40,13 @@ type LocationDetails = {
   postalCode: string;
   lat: number;
   lng: number;
+  label: string;
+
 };
 
 async function reverseGeocodeHere(
   lat: number,
-  lng: number,
+  lng: number
 ): Promise<LocationDetails | null> {
   try {
     const apiKey = import.meta.env.VITE_HERE_MAPS;
@@ -51,9 +54,15 @@ async function reverseGeocodeHere(
     const res = await fetch(url);
     const data = await res.json();
     const addr = data?.items?.[0]?.address;
+    const street = addr.street || "";
+    const house = addr.houseNumber ? ` ${addr.houseNumber}` : "";
+    const uiLabel = `${street}${house}`.trim() || addr.label || "";
+
+
     if (!addr) return null;
     return {
       address: addr.label || "",
+      label: uiLabel,
       city: addr.city || "",
       province: addr.county || "",
       district: addr.district || "",
@@ -78,6 +87,7 @@ function toAddressData(d: LocationDetails): AddressData {
     zipCode: Number(d.postalCode) || 0,
     longitude: String(d.lng),
     latitude: String(d.lat),
+    shortlabel: d.label, 
   };
 }
 
@@ -98,7 +108,7 @@ function useGeolocationOnce(fallback: LatLng): [LatLng, boolean] {
         if (!active) return;
         setLoading(false);
       },
-      { enableHighAccuracy: true, maximumAge: 30_000, timeout: 8_000 },
+      { enableHighAccuracy: true, maximumAge: 30_000, timeout: 8_000 }
     );
     return () => {
       active = false;
@@ -144,7 +154,7 @@ const PickupAddress: React.FC = () => {
     lng: 106.816666,
   });
   const [details, setDetails] = useState<LocationDetails | null>(null);
-
+  const [addressText, setAddressText] = useState(""); 
   // posisi awal & status map
   const [initialCenter, geoLoading] = useGeolocationOnce(markerPosition);
   const [mapReady] = useMapReady();
@@ -154,8 +164,12 @@ const PickupAddress: React.FC = () => {
   // apply posisi awal -> marker & detail
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
+    if (details?.address) setAddressText(details.address);
+  }, [details?.address]);
+  useEffect(() => {
     setMarkerPosition(initialCenter);
     // fetch detail pertama kali
+    
     (async () => {
       const d = await reverseGeocodeHere(initialCenter.lat, initialCenter.lng);
       if (d) {
@@ -176,7 +190,7 @@ const PickupAddress: React.FC = () => {
       map?.panTo(pos as any);
       map?.setZoom(16);
     },
-    [map],
+    [map]
   );
 
   const setPosAndResolve = useCallback(
@@ -185,12 +199,13 @@ const PickupAddress: React.FC = () => {
       const d = await reverseGeocodeHere(pos.lat, pos.lng);
       if (!d) return;
       setDetails(d);
+      setAddressText(d.address); 
       const payload = toAddressData(d);
       setPickupAddress(payload);
       if (currentStep === StepEnum.SENDER) setSenderAddress(payload);
       else if (currentStep === StepEnum.RECEIVER) setReceiverAddress(payload);
     },
-    [currentStep, setPickupAddress, setReceiverAddress, setSenderAddress],
+    [currentStep, setPickupAddress, setReceiverAddress, setSenderAddress]
   );
 
   const handleMapClick = (e: MapMouseEvent) => {
@@ -219,143 +234,148 @@ const PickupAddress: React.FC = () => {
       }
     });
   };
-
   const saveAddress = () => {
-    if (!details?.postalCode) return;
+    if (!details) return; // pastikan sudah ada lat/lng minimal
+  
+    // payload dari detail terakhir, tapi alamat pakai teks input
+    const payload = { ...toAddressData(details), address: addressText, shortLabel: details.label,   };
+  
+    setPickupAddress(payload);
     if (currentStep === StepEnum.SENDER) {
+      setSenderAddress(payload);
       setSenderForm((p) => ({ ...p, courierNote }));
     } else {
+      setReceiverAddress(payload);
       setReceiverForm((p) => ({ ...p, courierNote }));
     }
-
+  
     addhistory({
       id: `${Date.now()}`,
-      addressTypeName:
-        currentStep === "sender" ? "Alamat Pengirim" : "Alamat Penerima",
+      
       customerName: "",
       phone: "",
-      address: details.address,
-      zipCode: details.postalCode,
+      address: addressText,    
+      label: details.label,
+         
+      zipCode: details.postalCode ? String(details.postalCode) : "",    
       lat: details.lat,
       lng: details.lng,
     });
-
+  
     navigate(`/new-shipment?step=${currentStep}`);
   };
 
-  return (
-    <div>
-      <div
-        className={
-          isFullScreen
-            ? "fixed inset-0 z-[9999] bg-white"
-            : "relative mt-5 h-[360px] min-h-[360px] w-full"
-        }
-      >
-        {/* Search box */}
-        <div className="absolute top-4 right-4 left-4 z-20">
-          <div className="flex gap-2 rounded-lg bg-white p-2 shadow">
-            <Input
-              type="text"
-              placeholder="Cari lokasi..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
+
+    return (
+      <div className="w-full">
+        {/* Map wrapper */}
+        <div
+          className={
+            `relative mt-5 h-[360px] min-h-[360px] w-full` +
+            (isFullScreen ? " fixed inset-0 z-[9999] bg-white" : "")
+          }
+        >
+          {/* Search box */}
+          <div className="absolute top-4 right-4 left-4 z-20">
+            <div className="flex items-center gap-2 rounded-lg bg-white p-2 shadow">
+              <PlaceAutocompleteInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onPlaceSelect={(pos) => { panTo(pos); setPosAndResolve(pos); }}
+                countryRestriction="id"
+                className="!h-12 rounded-[16px] px-4 text-[15px]"
+              />
+              <Button
+                onClick={handleSearchLocation}
+                className="!h-12 rounded-[16px] px-5 bg-orange-500 text-white"
+              >
+                Cari
+              </Button>
+            </div>
+          </div>
+    
+          {/* Map + marker */}
+          <div className="relative h-full w-full overflow-hidden rounded-[1em] border">
+            <GoogleMap
+              defaultZoom={13}
+              defaultCenter={initialCenter}
+              onClick={handleMapClick}
+              streetViewControl={false}
+              mapTypeControl={false}
+              fullscreenControl
+              cameraControl={false}
+              className={`absolute inset-0 transition-opacity duration-200 ${
+                overallLoading ? "opacity-0" : "opacity-100"
+              }`}
             />
+            <Marker position={markerPosition} draggable onDragEnd={handleMarkerDragEnd} />
+    
+            {overallLoading && (
+              <div className="pointer-events-none absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-7 w-7 animate-spin" />
+                  <span className="text-muted-foreground text-sm">Memuat peta…</span>
+                </div>
+              </div>
+            )}
+          </div>
+    
+          {/* Controls */}
+          <div className="absolute right-4 bottom-6 z-10 flex gap-2">
             <Button
-              onClick={handleSearchLocation}
-              className="bg-orange-500 text-white"
+              onClick={() => { panTo(markerPosition); setPosAndResolve(markerPosition); }}
+              className="rounded-full border bg-white p-2 shadow-md"
             >
-              Cari
+              <MapPin className="h-5 w-5 text-blue-500" />
+            </Button>
+            <Button
+              onClick={() => setIsFullScreen((v) => !v)}
+              className="rounded-full border bg-white p-2 shadow-md"
+            >
+              {isFullScreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
             </Button>
           </div>
         </div>
+    
+        {/* Address info */}
+        <div className="mt-4 w-full space-y-4 rounded-[16px] bg-white px-4 py-6">
+          <div>
+            <p className="font-bold text-gray-400 text-sm">ALAMAT DIPILIH</p>
+            <Input
+              type="text"
+              value={details?.address ?? ""}
+              onChange={(e) => {
+                const address = e.target.value;
+                setAddressText(address);
 
-        {/* Map + marker */}
-        <div className="relative h-full w-full overflow-hidden rounded-[1em] border">
-          <GoogleMap
-            defaultZoom={13}
-            defaultCenter={initialCenter}
-            onClick={handleMapClick}
-            streetViewControl={false}
-            mapTypeControl={false}
-            fullscreenControl={true}
-            cameraControl={false}
-            className={`absolute inset-0 transition-opacity duration-200 ${overallLoading ? "opacity-0" : "opacity-100"}`}
-          />
-          <Marker
-            position={markerPosition}
-            draggable
-            onDragEnd={handleMarkerDragEnd}
-          />
+                setDetails(prev => (prev ? { ...prev, address } : null));
 
-          {overallLoading && (
-            <div className="pointer-events-none absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-sm">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-7 w-7 animate-spin" />
-                <span className="text-muted-foreground text-sm">
-                  Memuat peta…
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Controls */}
-        <div className="absolute right-4 bottom-6 z-10 flex gap-2">
-          <Button
-            onClick={() => {
-              panTo(markerPosition);
-              setPosAndResolve(markerPosition);
-            }}
-            className="rounded-full border bg-white p-2 shadow-md"
-          >
-            <MapPin className="h-5 w-5 text-blue-500" />
-          </Button>
-          <Button
-            onClick={() => setIsFullScreen((v) => !v)}
-            className="rounded-full border bg-white p-2 shadow-md"
-          >
-            {isFullScreen ? (
-              <Minimize2 className="h-5 w-5" />
-            ) : (
-              <Maximize2 className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* Address info */}
-      <div className="space-y-4 bg-white px-4 py-6">
-        <div>
-          <p className="font-bold text-gray-400 text-sm">ALAMAT DIPILIH</p>
-          <div className="min-h-[56px] rounded-xl border p-4">
-            <p className="text-gray-700 text-sm">
-              {details?.address || (overallLoading ? "Mengambil alamat…" : "-")}
-            </p>
+              }}
+              placeholder={overallLoading ? "Mengambil alamat…" : "Tulis alamat lengkap…"}
+              className="mt-2 w-full !h-14 rounded-[16px] border px-4 text-[15px] placeholder:text-[#B7B7B7]"
+            />
           </div>
+    
+          <div>
+            <Label>Catatan untuk kurir</Label>
+            <Input
+              placeholder="Contoh: Rumah, Kantor, Gudang..."
+              value={courierNote}
+              onChange={(e) => setCourierNote(e.target.value)}
+              className="mt-2 w-full !h-14 rounded-[16px] border px-4 text-[15px]"
+            />
+          </div>
+    
+          <Button
+            className="!h-14 w-full rounded-xl bg-orange-500 font-semibold text-lg text-white hover:bg-orange-400 disabled:opacity-50"
+            onClick={saveAddress}
+            disabled={overallLoading}
+          >
+            Simpan
+          </Button>
         </div>
-
-        <div>
-          <Label>Catatan untuk kurir</Label>
-          <Input
-            placeholder="Contoh: Rumah, Kantor, Gudang..."
-            value={courierNote}
-            onChange={(e) => setCourierNote(e.target.value)}
-            className="mt-2 rounded-xl border p-6 text-sm"
-          />
-        </div>
-
-        <Button
-          className="h-[56px] w-full rounded-xl bg-orange-500 font-semibold text-lg text-white hover:bg-orange-400 disabled:opacity-50"
-          onClick={saveAddress}
-          disabled={overallLoading}
-        >
-          Simpan
-        </Button>
       </div>
-    </div>
-  );
-};
+    );
+  }    
 
 export default PickupAddress;

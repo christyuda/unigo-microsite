@@ -1,5 +1,6 @@
 import { atom } from "jotai";
-import PosLogo from "@/assets/posindnew.png";
+// import PosLogo from "@/assets/posindnew.png";
+import PospayLogo from "@/assets/payment-icon/pospay.png";
 import BniLogo from "@/assets/payment-icon/bni.png";
 import BcaLogo from "@/assets/payment-icon/bca.png";
 import MandiriLogo from "@/assets/payment-icon/mandiri.png";
@@ -25,8 +26,8 @@ type UnderPaymentType = {
 export const PAYMENT_DATA = [
   {
     id: "pos",
-    label: "Pos Indonesia",
-    logo: PosLogo,
+    label: "Pospay",
+    logo: PospayLogo,
     prefix: undefined,
     howToPay: PosHow,
   },

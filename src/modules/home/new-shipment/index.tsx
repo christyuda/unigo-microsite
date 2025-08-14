@@ -13,7 +13,7 @@ import {
 } from "@/atom/shipments-atom";
 
 import { useAtom, useSetAtom } from "jotai";
-import { MapPin, Star } from "lucide-react";
+import { MapPin,  } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import NavHeaderShipment from "@/components/shared/nav-header-shipment";
@@ -27,6 +27,7 @@ const CreateShipment: React.FC = () => {
   const [selectedReceiver] = useAtom(receiverAddressDataAtom);
   const [searchParams] = useSearchParams();
   const setStep = useSetAtom(currentStepAtom);
+  
   useEffect(() => {
     const stepFromUrl = searchParams.get("step");
 
@@ -67,12 +68,12 @@ const CreateShipment: React.FC = () => {
 
         {isSender || isReceiver ? (
           <>
-            <AddressOptionButton
+            {/* <AddressOptionButton
               icon={<Star className="fill-orange-500 stroke-none" />}
               label="Pilih dari Alamat Favorit"
               isPrimary
               onClick={() => navigate("/address-favorite")}
-            />
+            /> */}
 
             {selectedAddress ? (
               <div
@@ -90,7 +91,7 @@ const CreateShipment: React.FC = () => {
                   {isSender ? "Alamat Pengirim" : "Alamat Penerima"}
                 </p>
                 <p className="font-bold text-black">
-                  {selectedAddress?.customerName || "-"}
+                {selectedAddress?.shortlabel || "-"}
                 </p>
                 <p className="text-gray-600 text-sm">
                   {selectedAddress?.address || "-"}

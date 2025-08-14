@@ -7,6 +7,7 @@ export default function SelectMapsAddress() {
     <HomeLayout>
       <NavHeader title="Peta" />
       <PickupAddress />
+    
     </HomeLayout>
   );
 }

@@ -1,8 +1,9 @@
 import { useAtom } from "jotai";
-import { senderFormAtom } from "@/atom/new-shipment-atom";
+
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { senderFormAtom } from "@/atom/shipments-atom";
 
 const ButtonContinue = () => {
   const [form] = useAtom(senderFormAtom);

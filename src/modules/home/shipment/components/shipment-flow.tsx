@@ -97,7 +97,7 @@ export default function ShipmentFlow() {
                 className="font-medium text-orange-500 text-sm"
                 onClick={() => navigate("/new-shipment?step=sender")}
               >
-                Detail
+                Ubah
               </Button>
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function ShipmentFlow() {
                 className="font-medium text-orange-500 text-sm"
                 onClick={() => navigate("/new-shipment?step=receiver")}
               >
-                Detail
+                Ubah
               </Button>
             </div>
           </div>

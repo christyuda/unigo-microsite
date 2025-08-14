@@ -1,5 +1,7 @@
 import BoxArrow from "@/assets/icon/box-arrow.png";
 import Box from "@/assets/icon/box.png";
+import BoxHow from "@/assets/icon/box-how.png";
+
 import Pin from "@/assets/icon/pin.png";
 import Pattern from "@/assets/pattern1.png";
 import PosAjaLogo from "@/assets/posaja.png";
@@ -27,7 +29,7 @@ const DATA_MENU = [
   },
   {
     name: "Cek Tarif",
-    icon: Box,
+    icon: BoxHow,
     href: "/check-rate",
     description:
       "Sebelum kirim paket? Cek tarif terlebih dahulu dan dapatkan harga terbaik!",
