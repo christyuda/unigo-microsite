@@ -19,7 +19,7 @@
     try {
       const response = await ky(endpoint, {
         // prefixUrl: import.meta.env.VITE_API_URL, // Base URL for the API
-        prefixUrl: import.meta.env.VITE_API_URL ,
+        prefixUrl: import.meta.env.VITE_MU,
         timeout: 60000, // Set a timeout for the   request
         retry: {
           limit: 3,
