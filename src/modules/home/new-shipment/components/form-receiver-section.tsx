@@ -225,7 +225,35 @@ useEffect(() => {
       {/* Label Alamat */}
 <div className="space-y-3">
 
-  <RadioGroup
+  
+
+  {/* Free text only when "Lainnya" */}
+  {labelOption === "lainnya" && (
+    <div className="space-y-1">
+      <Label className="text-[#0D1440] text-[15px]">Label Catatan</Label>
+      <Input
+        placeholder="Contoh: Gudang 1, Lantai 2..."
+        value={form.noteLabel}
+        onChange={(e) => {
+          const value = e.target.value;
+          if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
+            handleChange("noteLabel", value);
+          }
+        }}
+        className={cn(
+          inputStyle,
+          showErrors && !validate.noteLabel ? "border-red-500" : "border-[#E3E3E3]"
+        )}
+      />
+      {showErrors && !validate.noteLabel && (
+        <p className="mt-1 text-red-500 text-sm">
+          Label tidak boleh kosong saat memilih “Lainnya”.
+        </p>
+      )}
+    </div>
+  )}
+
+<RadioGroup
     value={labelOption}
     onValueChange={(val: "rumah" | "kantor" | "lainnya") => {
       setLabelOption(val);
@@ -282,32 +310,6 @@ useEffect(() => {
       </Label>
     </div>
   </RadioGroup>
-
-  {/* Free text only when "Lainnya" */}
-  {labelOption === "lainnya" && (
-    <div className="space-y-1">
-      <Label className="text-[#0D1440] text-[15px]">Label Catatan</Label>
-      <Input
-        placeholder="Contoh: Gudang 1, Lantai 2..."
-        value={form.noteLabel}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
-            handleChange("noteLabel", value);
-          }
-        }}
-        className={cn(
-          inputStyle,
-          showErrors && !validate.noteLabel ? "border-red-500" : "border-[#E3E3E3]"
-        )}
-      />
-      {showErrors && !validate.noteLabel && (
-        <p className="mt-1 text-red-500 text-sm">
-          Label tidak boleh kosong saat memilih “Lainnya”.
-        </p>
-      )}
-    </div>
-  )}
 </div>
 
       {/* Tombol Lanjut / Kembali */}
