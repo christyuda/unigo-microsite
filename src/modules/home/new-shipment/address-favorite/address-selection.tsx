@@ -83,6 +83,7 @@ const AddressSelection: React.FC = () => {
   const setReceiverForm = useSetAtom(receiverFormAtom);
   const setSenderPostal = useSetAtom(senderPostalCodeAtom);
   const setReceiverPostal = useSetAtom(receiverPostalCodeAtom);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const { addhistory } = useAddressHistory();
 
@@ -96,8 +97,7 @@ const AddressSelection: React.FC = () => {
   const [tab, setTab] = useState<"sender" | "receiver">(initialTab);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"atoz" | "ztoa" | "saved">("atoz");
-  const [selectedName, setSelectedName] = useState<string | null>(null);
-
+  
   const merchantUserId = getMerchantUserId();
   const addressTypeId = tab === "sender" ? "02" : "03";
 
@@ -221,9 +221,10 @@ const AddressSelection: React.FC = () => {
           {list.map((addr, index) => {
             // ✅ key yang stabil & unik
             const key =
-              addr.id && addr.id.trim() !== ""
-                ? addr.id
-                : `${addr.customerName}-${addr.phone}-${addr.zipCode}-${index}`;
+            addr.id && addr.id.trim() !== ""
+              ? addr.id
+              : `${addr.customerName}-${addr.phone}-${addr.zipCode}-${addr.latitude}-${addr.longitude}-${index}`;
+          
 
             const parsed = extractAddressData(
               `${addr.zipCode}#${addr.address}#${addr.cityName}`,
@@ -242,8 +243,8 @@ const AddressSelection: React.FC = () => {
                 name={addr.customerName}
                 address={preview}
                 withActions 
-                isSelected={selectedName === addr.customerName}
-                onSelect={() => setSelectedName(addr.customerName)}
+                isSelected={selectedKey === key}         // ← bandingkan dengan key unik
+                onSelect={() => setSelectedKey(key)}                
                 onConfirm={() => handleConfirm(addr)}
                 onDelete={() => handleDelete(addr.id)}
               />
