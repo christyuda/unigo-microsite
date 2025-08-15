@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import ShipmentCategoryDrawer from "./shipment-category-drawer";
 import { useAtom } from "jotai";
-import { itemDataAtom } from "@/atom/shipments-atom"; // or "@/atom/order-shipment-atom"
+import { itemDataAtom, itemTypeIdAtom } from "@/atom/shipments-atom"; // or "@/atom/order-shipment-atom"
 import { Input } from "@/components/ui/input";
 
 const quickCategories = [
@@ -23,8 +23,17 @@ const quickCategories = [
   { label: "Otomotif", icon: <Car size={16} /> },
 ];
 
+
 const ShipmentCategorySelector = () => {
   const [itemData, setItemData] = useAtom(itemDataAtom);
+  const [, setItemTypeId] = useAtom(itemTypeIdAtom);
+  const computeItemTypeId = (labelOrDesc: string, weight: number) => {
+    const t = (labelOrDesc || "").trim().toLowerCase();
+    return t === "dokumen" && weight <= 2000 ? 0 : 1;
+  };
+  useEffect(() => {
+    setItemTypeId(computeItemTypeId(itemData.description || "", itemData.weight));
+  }, [itemData.description, itemData.weight]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   // What’s currently selected (free text)
@@ -52,8 +61,10 @@ const ShipmentCategorySelector = () => {
         {quickCategories.map((item) => (
           <Button
             key={item.label}
-            onClick={() => updateDescription(item.label)}
-            variant={isActive(item.label) ? "default" : "outline"}
+            onClick={() => {
+              updateDescription(item.label);
+              setItemTypeId(computeItemTypeId(item.label, itemData.weight)); // ← penting
+            }}            variant={isActive(item.label) ? "default" : "outline"}
             className={`rounded-full ${
               isActive(item.label)
                 ? "border-orange-500 bg-orange-500 text-white hover:bg-orange-400"
@@ -93,8 +104,9 @@ const ShipmentCategorySelector = () => {
         onClose={() => setIsSheetOpen(false)}
         initialSelected={description} // ← preselect in drawer
         onSelect={({ label, description: desc }) => {
-          // If drawer returns custom, use it; else use the label it returned
-          updateDescription(desc ?? label);
+          const finalText = desc ?? label;
+          updateDescription(finalText);
+          setItemTypeId(computeItemTypeId(label, itemData.weight));
           setIsSheetOpen(false);
         }}
       />

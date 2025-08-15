@@ -75,6 +75,15 @@ async function reverseGeocodeHere(
     return null;
   }
 }
+function withHereZip(addr: string, zip?: string): string {
+  if (!zip) return addr || "";
+  const reIDZip = /\b\d{5}\b/;          
+  if (reIDZip.test(addr)) {
+    return addr.replace(reIDZip, zip);
+  }
+  if (addr.endsWith(zip) || addr.includes(`, ${zip}`)) return addr;
+  return addr ? `${addr}, ${zip}` : zip;
+}
 async function reverseGeocodeGoogle(
   lat: number,
   lng: number
@@ -111,11 +120,11 @@ async function resolveAddressHybrid(
 
   if (!h && !g) return null;
 
-  // label dari Google (route + street number) jika ada, fallback ke label HERE
-  const googleLabel = [g?.route, g?.streetNumber].filter(Boolean).join(' ').trim();
-
+  const googleLabel = [g?.route, g?.streetNumber].filter(Boolean).join(" ").trim();
+  const googleAddr = g?.formattedAddress || h?.address || "";
+  const hereZip = h?.postalCode || "";
   return {
-    address: g?.formattedAddress || h?.address || '',
+    address: withHereZip(googleAddr, hereZip), // 👈 tampilkan ZIP dari HERE
     label: googleLabel || h?.label || '',
     city: h?.city || '',
     province: h?.province || '',
@@ -281,15 +290,12 @@ const PickupAddress: React.FC = () => {
     geocoderRef.current.geocode({ address: searchQuery }, (results, status) => {
       if (status === "OK" && results?.[0]) {
         const loc = results[0].geometry.location;
-        goTo({ lat: loc.lat(), lng: loc.lng() });   // 👈 one call does all
-
+        goTo({ lat: loc.lat(), lng: loc.lng() });  
       }
     });
   };
   const saveAddress = () => {
-    if (!details) return; // pastikan sudah ada lat/lng minimal
-  
-    // payload dari detail terakhir, tapi alamat pakai teks input
+    if (!details) return; 
     const payload = { ...toAddressData(details), address: addressText, shortLabel: details.label,   };
   
     setPickupAddress(payload);
@@ -406,7 +412,7 @@ const PickupAddress: React.FC = () => {
             <p className="font-bold text-gray-400 text-sm">ALAMAT DIPILIH</p>
             <Input
               type="text"
-              value={details?.address ?? ""}
+              value={addressText}
               onChange={(e) => {
                 const address = e.target.value;
                 setAddressText(address);

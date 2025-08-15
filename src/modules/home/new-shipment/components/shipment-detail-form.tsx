@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, fetchApi } from "@/lib/utils";
-import { getMerchantUserId, buildAddressCreateBody,  } from "@/lib/utils";
+import { getMerchantUserId, buildAddressCreateBody } from "@/lib/utils";
 
 import type { CourierService } from "@/types/types";
 
@@ -56,7 +56,7 @@ const ShipmentDetailForm: React.FC = () => {
   const senderAddress = useAtomValue(senderAddressDataAtom);
   const receiverAddress = useAtomValue(receiverAddressDataAtom);
   const senderForm = useAtomValue(senderFormAtom);
-const receiverForm = useAtomValue(receiverFormAtom);
+  const receiverForm = useAtomValue(receiverFormAtom);
 
   // local state
   const [isInsured, setIsInsured] = useState(itemData.IsInsurance === "1");
@@ -66,7 +66,7 @@ const receiverForm = useAtomValue(receiverFormAtom);
   const [displayValue, setDisplayValue] = useState(
     itemData.value
       ? `Rp ${new Intl.NumberFormat("id-ID").format(itemData.value)}`
-      : "",
+      : ""
   );
 
   const resetServices = () => {
@@ -76,7 +76,8 @@ const receiverForm = useAtomValue(receiverFormAtom);
   };
 
   const parseNumber = (v: string) => (Number.isNaN(Number(v)) ? 0 : Number(v));
-
+  const computeItemTypeId = (labelOrDesc: string, weight: number) =>
+    (labelOrDesc || "").trim().toLowerCase() === "dokumen" && weight <= 2000 ? 0 : 1;
   // zips as string (API expects string)
   const shipperZipCode = senderAddress?.zipCode
     ? String(senderAddress.zipCode)
@@ -88,7 +89,7 @@ const receiverForm = useAtomValue(receiverFormAtom);
   // rule: surat(0) > 2000g => paket(1)
   const effectiveItemTypeId = useMemo(
     () => (itemTypeId === 0 && itemData.weight > 2000 ? 1 : itemTypeId),
-    [itemTypeId, itemData.weight],
+    [itemTypeId, itemData.weight]
   );
 
   const feePayload = useMemo(
@@ -114,7 +115,7 @@ const receiverForm = useAtomValue(receiverFormAtom);
       itemData.height,
       isInsured,
       itemData.value,
-    ],
+    ]
   );
 
   const {
@@ -183,7 +184,7 @@ const receiverForm = useAtomValue(receiverFormAtom);
   const saveFavoritesIfNeeded = async () => {
     const merchantUserId = getMerchantUserId();
     const tasks: Promise<any>[] = [];
-  
+
     if (senderForm?.isFavorite && senderAddress) {
       const body = buildAddressCreateBody({
         who: "sender",
@@ -196,11 +197,12 @@ const receiverForm = useAtomValue(receiverFormAtom);
           method: "post",
           body: JSON.stringify(body),
         }).then((res) => {
-          if (res.code !== "000") throw new Error(res.message || "Create sender favorite failed");
+          if (res.code !== "000")
+            throw new Error(res.message || "Create sender favorite failed");
         })
       );
     }
-  
+
     if (receiverForm?.isFavorite && receiverAddress) {
       const body = buildAddressCreateBody({
         who: "receiver",
@@ -213,22 +215,23 @@ const receiverForm = useAtomValue(receiverFormAtom);
           method: "post",
           body: JSON.stringify(body),
         }).then((res) => {
-          if (res.code !== "000") throw new Error(res.message || "Create receiver favorite failed");
+          if (res.code !== "000")
+            throw new Error(res.message || "Create receiver favorite failed");
         })
       );
     }
-  
+
     if (tasks.length) {
       await Promise.allSettled(tasks); // don’t block the user if one fails
     }
   };
-  const handleNextStep = async ()  => {
+  const handleNextStep = async () => {
     if (!selectedService) {
       toast.error("Silakan pilih layanan pengiriman terlebih dahulu.");
       return;
     }
     const chosen = services.find(
-      (s) => String(s.serviceCode) === selectedService,
+      (s) => String(s.serviceCode) === selectedService
     );
     if (!chosen) {
       toast.error("Layanan yang dipilih tidak ditemukan.");
@@ -241,7 +244,11 @@ const receiverForm = useAtomValue(receiverFormAtom);
     try {
       await saveFavoritesIfNeeded();
     } catch (e) {
-      toast.error(`Gagal menyimpan alamat favorit: ${e instanceof Error ? e.message : "Unknown error"}`);
+      toast.error(
+        `Gagal menyimpan alamat favorit: ${
+          e instanceof Error ? e.message : "Unknown error"
+        }`
+      );
       return;
     }
     // commit service & fee
@@ -277,8 +284,6 @@ const receiverForm = useAtomValue(receiverFormAtom);
       }),
     }));
 
-    
-
     navigate("/create-shipment");
   };
 
@@ -298,13 +303,16 @@ const receiverForm = useAtomValue(receiverFormAtom);
             onChange={(e) => {
               const raw = e.target.value;
               if (/^\d*$/.test(raw)) {
-                setItemData((prev) => ({ ...prev, weight: parseNumber(raw) }));
+                const w = parseNumber(raw);
+                setItemData((prev) => ({ ...prev, weight: w }));
+                setItemTypeId(computeItemTypeId(itemData.description || "", w)); // ← update
                 resetServices();
               }
             }}
             placeholder="Masukkan berat dalam gram"
             className={inputStyle}
           />
+
         </div>
       </div>
 
@@ -385,7 +393,7 @@ const receiverForm = useAtomValue(receiverFormAtom);
                 setDisplayValue(
                   raw
                     ? `Rp ${new Intl.NumberFormat("id-ID").format(numeric)}`
-                    : "",
+                    : ""
                 );
               }}
               placeholder="Masukkan nilai barang"
@@ -401,7 +409,7 @@ const receiverForm = useAtomValue(receiverFormAtom);
         disabled={isLoading}
         className={cn(
           "h-[56px] w-full rounded-xl font-semibold text-lg text-white",
-          isLoading ? "bg-orange-400" : "bg-orange-500 hover:bg-orange-400",
+          isLoading ? "bg-orange-400" : "bg-orange-500 hover:bg-orange-400"
         )}
       >
         {isLoading ? (
@@ -449,7 +457,7 @@ const receiverForm = useAtomValue(receiverFormAtom);
                     "cursor-pointer border px-4 py-4 transition-all",
                     isActive
                       ? "border-orange-500 bg-[#FFF9F4]"
-                      : "border-gray-300 bg-white",
+                      : "border-gray-300 bg-white"
                   )}
                 >
                   <CardContent className="flex w-full items-start justify-between gap-4 p-4">
@@ -469,7 +477,7 @@ const receiverForm = useAtomValue(receiverFormAtom);
                         <p className="text-gray-400 text-xs line-through">
                           Rp{" "}
                           {(svc.totalFee + svc.discount).toLocaleString(
-                            "id-ID",
+                            "id-ID"
                           )}
                         </p>
                       )}
