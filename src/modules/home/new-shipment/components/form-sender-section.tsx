@@ -113,8 +113,6 @@ const FormSenderSection = () => {
         zipCode: base.zipCode,
         longitude: base.longitude,
         latitude: base.latitude,
-
-        // propagate optional fields if you store them in AddressData
         noteLabel: form.noteLabel.trim(),
         courierNote: form.courierNote,
       };
@@ -138,7 +136,6 @@ const FormSenderSection = () => {
           value={form.name}
           onChange={(e) => {
             const value = e.target.value;
-            // If you want to allow punctuation/accents: /^(?!\s)[a-zA-ZÀ-ž\s.'-]*$/
             if (/^[a-zA-Z\s]*$/.test(value)) {
               handleChange("name", value);
             }
@@ -207,113 +204,115 @@ const FormSenderSection = () => {
           </p>
           <Switch
             checked={form.isFavorite}
-            onCheckedChange={(val) => handleChange("isFavorite", val)}
+            onCheckedChange={(val) => {
+              handleChange("isFavorite", val);
+              if (val && !form.noteLabel.trim()) {
+                setLabelOption("lainnya");
+                handleChange("noteLabel", "");
+              }
+            }}
             className={form.isFavorite ? "bg-orange-500" : "bg-gray-300"}
           />
         </div>
       </div>
-
-      {/* Label Catatan */}
-      <div className="space-y-3">
-        
-
-        {/* Free text only when "Lainnya" */}
-        {labelOption === "lainnya" && (
-          <div className="space-y-1">
-            <Label className="text-[#0D1440] text-[15px]">Label Catatan</Label>
-            <Input
-              placeholder="Contoh: Gudang 1, Lantai 2..."
-              value={form.noteLabel}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
-                  handleChange("noteLabel", value);
-                }
-              }}
-              className={cn(
-                inputStyle,
-                showErrors && !validate.noteLabel
-                  ? "border-red-500"
-                  : "border-[#E3E3E3]"
+      {form.isFavorite && (
+        <div className="space-y-3">
+          {/* Input bebas muncul hanya bila "Lainnya" */}
+          {labelOption === "lainnya" && (
+            <div className="space-y-1">
+              <Label className="text-[#0D1440] text-[15px]">
+                Label Catatan
+              </Label>
+              <Input
+                placeholder="Contoh: Gudang 1, Lantai 2..."
+                value={form.noteLabel}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
+                    handleChange("noteLabel", value);
+                  }
+                }}
+                className={cn(
+                  inputStyle,
+                  showErrors && !validate.noteLabel
+                    ? "border-red-500"
+                    : "border-[#E3E3E3]"
+                )}
+              />
+              {showErrors && !validate.noteLabel && (
+                <p className="mt-1 text-red-500 text-sm">
+                  Label tidak boleh kosong saat memilih “Lainnya”.
+                </p>
               )}
-            />
-            {showErrors && !validate.noteLabel && (
-              <p className="mt-1 text-red-500 text-sm">
-                Label tidak boleh kosong saat memilih “Lainnya”.
-              </p>
-            )}
-          </div>
-        )}
-        <RadioGroup
-          value={labelOption}
-          onValueChange={(val: "rumah" | "kantor" | "lainnya") => {
-            setLabelOption(val);
-            if (val === "rumah") {
-              handleChange("noteLabel", "Rumah");
-            } else if (val === "kantor") {
-              handleChange("noteLabel", "Kantor");
-            } else {
-              // kosongkan saat pilih Lainnya agar user isi bebas
-              handleChange("noteLabel", "");
-            }
-          }}
-          className="grid grid-cols-3 gap-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem
-              id="opt-rumah"
-              value="rumah"
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor="opt-rumah"
-              className={cn(
-                "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
-                "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                "peer-data-[state=checked]:border-orange-500"
-              )}
-            >
-              Rumah
-            </Label>
-          </div>
+            </div>
+          )}
 
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem
-              id="opt-kantor"
-              value="kantor"
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor="opt-kantor"
-              className={cn(
-                "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
-                "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                "peer-data-[state=checked]:border-orange-500"
-              )}
-            >
-              Kantor
-            </Label>
-          </div>
+          <RadioGroup
+            value={labelOption}
+            onValueChange={(val: "rumah" | "kantor" | "lainnya") => {
+              setLabelOption(val);
+              if (val === "rumah") handleChange("noteLabel", "Rumah");
+              else if (val === "kantor") handleChange("noteLabel", "Kantor");
+              else handleChange("noteLabel", "");
+            }}
+            className="grid grid-cols-3 gap-2"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                id="opt-rumah"
+                value="rumah"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="opt-rumah"
+                className={cn(
+                  "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
+                  "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
+                  "peer-data-[state=checked]:border-orange-500"
+                )}
+              >
+                Rumah
+              </Label>
+            </div>
 
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem
-              id="opt-lainnya"
-              value="lainnya"
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor="opt-lainnya"
-              className={cn(
-                "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
-                "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                "peer-data-[state=checked]:border-orange-500"
-              )}
-            >
-              Lainnya
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                id="opt-kantor"
+                value="kantor"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="opt-kantor"
+                className={cn(
+                  "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
+                  "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
+                  "peer-data-[state=checked]:border-orange-500"
+                )}
+              >
+                Kantor
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                id="opt-lainnya"
+                value="lainnya"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="opt-lainnya"
+                className={cn(
+                  "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
+                  "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
+                  "peer-data-[state=checked]:border-orange-500"
+                )}
+              >
+                Lainnya
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+      )}
 
       {/* Tombol Lanjut */}
       <div className="pt-2">

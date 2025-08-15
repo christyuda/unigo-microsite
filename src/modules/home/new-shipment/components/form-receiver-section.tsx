@@ -25,20 +25,22 @@ const FormReceiverSection = () => {
   const [form, setForm] = useAtom(receiverFormAtom);
   const [, setStep] = useAtom(currentStepAtom);
   const [receiverAddressData, setReceiverAddressData] = useAtom(
-    receiverAddressDataAtom,
+    receiverAddressDataAtom
   );
   const navigate = useNavigate();
   const [showErrors, setShowErrors] = useState(false);
-// 'rumah' | 'kantor' | 'lainnya'
-const [labelOption, setLabelOption] = useState<"rumah" | "kantor" | "lainnya">("lainnya");
+  // 'rumah' | 'kantor' | 'lainnya'
+  const [labelOption, setLabelOption] = useState<
+    "rumah" | "kantor" | "lainnya"
+  >("lainnya");
 
-// initialize based on existing form.noteLabel
-useEffect(() => {
-  const normalized = (form.noteLabel || "").trim().toLowerCase();
-  if (normalized === "rumah") setLabelOption("rumah");
-  else if (normalized === "kantor") setLabelOption("kantor");
-  else setLabelOption("lainnya");
-}, []); // run once
+  // initialize based on existing form.noteLabel
+  useEffect(() => {
+    const normalized = (form.noteLabel || "").trim().toLowerCase();
+    if (normalized === "rumah") setLabelOption("rumah");
+    else if (normalized === "kantor") setLabelOption("kantor");
+    else setLabelOption("lainnya");
+  }, []); // run once
 
   const splitAddressNotes = (raw?: string) => {
     const parts = (raw ?? "")
@@ -58,7 +60,7 @@ useEffect(() => {
     if (!receiverAddressData) return;
 
     const { noteLabel, courierNote } = splitAddressNotes(
-      receiverAddressData.address,
+      receiverAddressData.address
     );
 
     setForm((prev) => ({
@@ -74,12 +76,12 @@ useEffect(() => {
   const validate = {
     name: !!form.name && form.name.trim().length >= 2,
     phone: /^(08\d{8,12}|628\d{7,12})$/.test(form.phoneNumber),
-    noteLabel:
-    !form.isFavorite
+    noteLabel: !form.isFavorite
       ? true
       : labelOption !== "lainnya"
-        ? true
-        : !!form.noteLabel && form.noteLabel.trim().length > 0,  };
+      ? true
+      : !!form.noteLabel && form.noteLabel.trim().length > 0,
+  };
 
   const isValid = validate.name && validate.phone && validate.noteLabel;
 
@@ -149,9 +151,7 @@ useEffect(() => {
           }}
           className={cn(
             inputStyle,
-            showErrors && !validate.name
-              ? "border-red-500"
-              : "border-[#E3E3E3]",
+            showErrors && !validate.name ? "border-red-500" : "border-[#E3E3E3]"
           )}
         />
         {showErrors && !validate.name && (
@@ -176,7 +176,7 @@ useEffect(() => {
             inputStyle,
             showErrors && !validate.phone
               ? "border-red-500"
-              : "border-[#E3E3E3]",
+              : "border-[#E3E3E3]"
           )}
         />
         {showErrors && !validate.phone && (
@@ -215,102 +215,118 @@ useEffect(() => {
           </p>
           <Switch
             checked={form.isFavorite}
-            onCheckedChange={(val) => handleChange("isFavorite", val)}
+            onCheckedChange={(val) => {
+              handleChange("isFavorite", val);
+              if (val && !form.noteLabel.trim()) {
+                setLabelOption("lainnya");
+                handleChange("noteLabel", "");
+              }
+            }}            
             className={form.isFavorite ? "bg-orange-500" : "bg-gray-300"}
           />
         </div>
       </div>
 
-      {/* Label Catatan */}
+     
       {/* Label Alamat */}
-<div className="space-y-3">
+      {form.isFavorite && (
+        <div className="space-y-3">
+          {/* Input bebas muncul hanya bila "Lainnya" */}
+          {labelOption === "lainnya" && (
+            <div className="space-y-1">
+              <Label className="text-[#0D1440] text-[15px]">
+                Label Catatan
+              </Label>
+              <Input
+                placeholder="Contoh: Gudang 1, Lantai 2..."
+                value={form.noteLabel}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
+                    handleChange("noteLabel", value);
+                  }
+                }}
+                className={cn(
+                  inputStyle,
+                  showErrors && !validate.noteLabel
+                    ? "border-red-500"
+                    : "border-[#E3E3E3]"
+                )}
+              />
+              {showErrors && !validate.noteLabel && (
+                <p className="mt-1 text-red-500 text-sm">
+                  Label tidak boleh kosong saat memilih “Lainnya”.
+                </p>
+              )}
+            </div>
+          )}
 
-  
+          <RadioGroup
+            value={labelOption}
+            onValueChange={(val: "rumah" | "kantor" | "lainnya") => {
+              setLabelOption(val);
+              if (val === "rumah") handleChange("noteLabel", "Rumah");
+              else if (val === "kantor") handleChange("noteLabel", "Kantor");
+              else handleChange("noteLabel", "");
+            }}
+            className="grid grid-cols-3 gap-2"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                id="opt-rumah"
+                value="rumah"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="opt-rumah"
+                className={cn(
+                  "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
+                  "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
+                  "peer-data-[state=checked]:border-orange-500"
+                )}
+              >
+                Rumah
+              </Label>
+            </div>
 
-  {/* Free text only when "Lainnya" */}
-  {labelOption === "lainnya" && (
-    <div className="space-y-1">
-      <Label className="text-[#0D1440] text-[15px]">Label Catatan</Label>
-      <Input
-        placeholder="Contoh: Gudang 1, Lantai 2..."
-        value={form.noteLabel}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
-            handleChange("noteLabel", value);
-          }
-        }}
-        className={cn(
-          inputStyle,
-          showErrors && !validate.noteLabel ? "border-red-500" : "border-[#E3E3E3]"
-        )}
-      />
-      {showErrors && !validate.noteLabel && (
-        <p className="mt-1 text-red-500 text-sm">
-          Label tidak boleh kosong saat memilih “Lainnya”.
-        </p>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                id="opt-kantor"
+                value="kantor"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="opt-kantor"
+                className={cn(
+                  "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
+                  "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
+                  "peer-data-[state=checked]:border-orange-500"
+                )}
+              >
+                Kantor
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem
+                id="opt-lainnya"
+                value="lainnya"
+                className="peer sr-only"
+              />
+              <Label
+                htmlFor="opt-lainnya"
+                className={cn(
+                  "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
+                  "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
+                  "peer-data-[state=checked]:border-orange-500"
+                )}
+              >
+                Lainnya
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
       )}
-    </div>
-  )}
-
-<RadioGroup
-    value={labelOption}
-    onValueChange={(val: "rumah" | "kantor" | "lainnya") => {
-      setLabelOption(val);
-      if (val === "rumah") {
-        handleChange("noteLabel", "Rumah");
-      } else if (val === "kantor") {
-        handleChange("noteLabel", "Kantor");
-      } else {
-        // kosongkan saat pilih Lainnya agar user isi bebas
-        handleChange("noteLabel", "");
-      }
-    }}
-    className="grid grid-cols-3 gap-2"
-  >
-    <div className="flex items-center space-x-2">
-      <RadioGroupItem id="opt-rumah" value="rumah" className="peer sr-only" />
-      <Label
-        htmlFor="opt-rumah"
-        className={cn(
-          "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
-          "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-          "peer-data-[state=checked]:border-orange-500"
-        )}
-      >
-        Rumah
-      </Label>
-    </div>
-
-    <div className="flex items-center space-x-2">
-      <RadioGroupItem id="opt-kantor" value="kantor" className="peer sr-only" />
-      <Label
-        htmlFor="opt-kantor"
-        className={cn(
-          "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
-          "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-          "peer-data-[state=checked]:border-orange-500"
-        )}
-      >
-        Kantor
-      </Label>
-    </div>
-
-    <div className="flex items-center space-x-2">
-      <RadioGroupItem id="opt-lainnya" value="lainnya" className="peer sr-only" />
-      <Label
-        htmlFor="opt-lainnya"
-        className={cn(
-          "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
-          "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-          "peer-data-[state=checked]:border-orange-500"
-        )}
-      >
-        Lainnya
-      </Label>
-    </div>
-  </RadioGroup>
-</div>
 
       {/* Tombol Lanjut / Kembali */}
       <div className="flex gap-3 pt-2">
