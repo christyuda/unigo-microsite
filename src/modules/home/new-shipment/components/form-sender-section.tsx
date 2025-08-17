@@ -27,11 +27,13 @@ const FormSenderSection = () => {
   const [senderAddressData, setSenderAddressData] = useAtom(
     senderAddressDataAtom
   );
+  
   const navigate = useNavigate();
   const [showErrors, setShowErrors] = useState(false);
   const [labelOption, setLabelOption] = useState<
     "rumah" | "kantor" | "lainnya"
   >("lainnya");
+  const [touched, setTouched] = useState({ name: false, phone: false, noteLabel: false });
 
   const splitAddressNotes = (raw?: string) => {
     const parts = (raw ?? "")
@@ -134,6 +136,7 @@ const FormSenderSection = () => {
         <Input
           placeholder="Masukkan nama lengkap"
           value={form.name}
+          onBlur={() => setTouched((t) => ({ ...t, name: true }))}
           onChange={(e) => {
             const value = e.target.value;
             if (/^[a-zA-Z\s]*$/.test(value)) {
@@ -142,12 +145,12 @@ const FormSenderSection = () => {
           }}
           className={cn(
             inputStyle,
-            showErrors && !validate.name ? "border-red-500" : "border-[#E3E3E3]"
+            ((showErrors || touched.name) && !validate.name) ? "border-red-500" : "border-[#E3E3E3]"
           )}
         />
-        {showErrors && !validate.name && (
-          <p className="mt-1 text-red-500 text-sm">Nama minimal 2 huruf.</p>
-        )}
+        {(showErrors || touched.name) && !validate.name && (
+  <p className="mt-1 text-red-500 text-sm">Nama pengirim wajib diisi (min. 2 huruf).</p>
+)}
       </div>
 
       {/* Nomor HP */}
@@ -155,6 +158,8 @@ const FormSenderSection = () => {
         <Label className="text-[#0D1440] text-[15px]">Nomor HP Pengirim</Label>
         <Input
           placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
+          onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
+
           type="tel"
           value={form.phoneNumber}
           onChange={(e) => {
@@ -165,16 +170,14 @@ const FormSenderSection = () => {
           }}
           className={cn(
             inputStyle,
-            showErrors && !validate.phone
-              ? "border-red-500"
-              : "border-[#E3E3E3]"
+            ((showErrors || touched.phone) && !validate.phone) ? "border-red-500" : "border-[#E3E3E3]"
           )}
         />
-        {showErrors && !validate.phone && (
-          <p className="mt-1 text-red-500 text-sm">
-            Nomor HP harus dimulai dengan 08 atau 62 dan memiliki panjang valid.
-          </p>
-        )}
+       {(showErrors || touched.phone) && !validate.phone && (
+  <p className="mt-1 text-red-500 text-sm">
+    Nomor HP pengirim wajib diisi dengan minimal 10 digit (diawali 08 atau 62).
+  </p>
+)}
       </div>
 
       {/* Catatan Untuk Kurir */}
@@ -225,7 +228,10 @@ const FormSenderSection = () => {
               </Label>
               <Input
                 placeholder="Contoh: Gudang 1, Lantai 2..."
+                onBlur={() => setTouched((t) => ({ ...t, noteLabel: true }))}
+
                 value={form.noteLabel}
+                
                 onChange={(e) => {
                   const value = e.target.value;
                   if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
@@ -234,16 +240,14 @@ const FormSenderSection = () => {
                 }}
                 className={cn(
                   inputStyle,
-                  showErrors && !validate.noteLabel
-                    ? "border-red-500"
-                    : "border-[#E3E3E3]"
+                  ((showErrors || touched.noteLabel) && !validate.noteLabel) ? "border-red-500" : "border-[#E3E3E3]"
                 )}
               />
-              {showErrors && !validate.noteLabel && (
-                <p className="mt-1 text-red-500 text-sm">
-                  Label tidak boleh kosong saat memilih “Lainnya”.
-                </p>
-              )}
+              {(showErrors || touched.noteLabel) && !validate.noteLabel && (
+  <p className="mt-1 text-red-500 text-sm">
+    Label catatan wajib diisi jika menyimpan ke favorit.
+  </p>
+)}
             </div>
           )}
 

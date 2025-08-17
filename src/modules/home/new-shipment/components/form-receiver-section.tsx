@@ -33,6 +33,11 @@ const FormReceiverSection = () => {
   const [labelOption, setLabelOption] = useState<
     "rumah" | "kantor" | "lainnya"
   >("lainnya");
+  const [touched, setTouched] = useState({
+    name: false,
+    phone: false,
+    noteLabel: false,
+  });
 
   // initialize based on existing form.noteLabel
   useEffect(() => {
@@ -142,6 +147,7 @@ const FormReceiverSection = () => {
         <Label className="text-[#0D1440] text-[15px]">Nama Penerima</Label>
         <Input
           placeholder="Masukkan nama lengkap"
+          onBlur={() => setTouched((t) => ({ ...t, name: true }))}
           value={form.name}
           onChange={(e) => {
             const value = e.target.value;
@@ -151,11 +157,15 @@ const FormReceiverSection = () => {
           }}
           className={cn(
             inputStyle,
-            showErrors && !validate.name ? "border-red-500" : "border-[#E3E3E3]"
+            (showErrors || touched.name) && !validate.name
+              ? "border-red-500"
+              : "border-[#E3E3E3]"
           )}
         />
-        {showErrors && !validate.name && (
-          <p className="mt-1 text-red-500 text-sm">Nama minimal 2 huruf.</p>
+        {(showErrors || touched.name) && !validate.name && (
+          <p className="mt-1 text-red-500 text-sm">
+            Nama penerima wajib diisi.
+          </p>
         )}
       </div>
 
@@ -172,16 +182,18 @@ const FormReceiverSection = () => {
               handleChange("phoneNumber", value);
             }
           }}
+          onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
           className={cn(
             inputStyle,
-            showErrors && !validate.phone
+            (showErrors || touched.phone) && !validate.phone
               ? "border-red-500"
               : "border-[#E3E3E3]"
           )}
         />
-        {showErrors && !validate.phone && (
+        {(showErrors || touched.phone) && !validate.phone && (
           <p className="mt-1 text-red-500 text-sm">
-            Nomor HP harus dimulai dengan 08 atau 62 dan memiliki panjang valid.
+            Nomor HP penerima wajib diisi dengan minimal 10 digit (diawali
+            08/62).
           </p>
         )}
       </div>
@@ -221,13 +233,14 @@ const FormReceiverSection = () => {
                 setLabelOption("lainnya");
                 handleChange("noteLabel", "");
               }
-            }}            
+              if (!val) setTouched((t) => ({ ...t, noteLabel: false }));
+
+            }}
             className={form.isFavorite ? "bg-orange-500" : "bg-gray-300"}
           />
         </div>
       </div>
 
-     
       {/* Label Alamat */}
       {form.isFavorite && (
         <div className="space-y-3">
@@ -240,6 +253,7 @@ const FormReceiverSection = () => {
               <Input
                 placeholder="Contoh: Gudang 1, Lantai 2..."
                 value={form.noteLabel}
+                onBlur={() => setTouched((t) => ({ ...t, noteLabel: true }))}
                 onChange={(e) => {
                   const value = e.target.value;
                   if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
@@ -248,14 +262,14 @@ const FormReceiverSection = () => {
                 }}
                 className={cn(
                   inputStyle,
-                  showErrors && !validate.noteLabel
+                  (showErrors || touched.noteLabel) && !validate.noteLabel
                     ? "border-red-500"
                     : "border-[#E3E3E3]"
                 )}
               />
-              {showErrors && !validate.noteLabel && (
+              {(showErrors || touched.noteLabel) && !validate.noteLabel && (
                 <p className="mt-1 text-red-500 text-sm">
-                  Label tidak boleh kosong saat memilih “Lainnya”.
+                  Label catatan wajib diisi jika menyimpan ke favorit.
                 </p>
               )}
             </div>
