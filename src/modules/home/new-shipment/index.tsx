@@ -90,9 +90,9 @@ const CreateShipment: React.FC = () => {
                 <p className="text-gray-400 text-sm">
                   {isSender ? "Alamat Pengirim" : "Alamat Penerima"}
                 </p>
-                <p className="font-bold text-black">
+                {/* <p className="font-bold text-black">
                 {selectedAddress?.shortlabel || "-"}
-                </p>
+                </p> */}
                 <p className="text-gray-600 text-sm">
                   {selectedAddress?.address || "-"}
                 </p>

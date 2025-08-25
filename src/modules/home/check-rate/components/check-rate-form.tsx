@@ -348,6 +348,7 @@ export default function CheckRateForm() {
                   value={value}
                   type="number"
                   id="weight"
+                  min={0}
                   className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
                   placeholder="Ketik berat aktual kiriman"
                   onChange={onChange}
@@ -392,6 +393,7 @@ export default function CheckRateForm() {
                       id="lengthCm"
                       value={value}
                       type="number"
+                      min={0}
                       className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
                       placeholder="cth: 20"
                       onChange={onChange}
@@ -419,6 +421,7 @@ export default function CheckRateForm() {
                       id="widthCm"
                       value={value}
                       type="number"
+                      min={0}
                       className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
                       placeholder="cth: 15"
                       onChange={onChange}
@@ -446,6 +449,7 @@ export default function CheckRateForm() {
                       id="heightCm"
                       value={value}
                       type="number"
+                      min={0}
                       className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
                       placeholder="cth: 10"
                       onChange={onChange}
@@ -497,6 +501,7 @@ export default function CheckRateForm() {
                   <CurrencyInput
                     className="w-full rounded-none border-x-0 border-t-0 border-b shadow-none focus-visible:border-brand-500 focus-visible:ring-0"
                     value={value}
+                    
                     onChange={onChange}
                     placeholder="Ketik besaran nilai isi kiriman"
                   />
