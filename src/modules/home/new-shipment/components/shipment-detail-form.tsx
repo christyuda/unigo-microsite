@@ -74,10 +74,14 @@ const ShipmentDetailForm: React.FC = () => {
     setSelectedService(null);
     setShowServices(false);
   };
-
+  const MIN_WEIGHT = 1000;
+  const MAX_WEIGHT = 50000;
+  const MAX_DIM = 600;
   const parseNumber = (v: string) => (Number.isNaN(Number(v)) ? 0 : Number(v));
   const computeItemTypeId = (labelOrDesc: string, weight: number) =>
-    (labelOrDesc || "").trim().toLowerCase() === "dokumen" && weight <= 2000 ? 0 : 1;
+    (labelOrDesc || "").trim().toLowerCase() === "dokumen" && weight <= 2000
+      ? 0
+      : 1;
   // zips as string (API expects string)
   const shipperZipCode = senderAddress?.zipCode
     ? String(senderAddress.zipCode)
@@ -169,8 +173,30 @@ const ShipmentDetailForm: React.FC = () => {
       toast.error("Dimensi kiriman harus diisi dengan benar");
       return;
     }
+    if (itemData.weight < MIN_WEIGHT) {
+      toast.error("Minimal berat kiriman adalah 1 kg (1.000 gram)");
+      return;
+    }
+    if (itemData.weight > MAX_WEIGHT) {
+      toast.error("Maksimal berat kiriman adalah 50 kg (50.000 gram)");
+      return;
+    }
+
     if (isInsured && itemData.value <= 0) {
       toast.error("Nilai barang harus > 0 jika menggunakan asuransi");
+      return;
+    }
+    // VALIDASI DIMENSI
+    if (itemData.length <= 0 || itemData.width <= 0 || itemData.height <= 0) {
+      toast.error("Dimensi kiriman harus diisi dengan benar");
+      return;
+    }
+    if (
+      itemData.length > MAX_DIM ||
+      itemData.width > MAX_DIM ||
+      itemData.height > MAX_DIM
+    ) {
+      toast.error("Maksimal panjang, lebar, dan tinggi adalah 600 cm");
       return;
     }
 
@@ -303,7 +329,13 @@ const ShipmentDetailForm: React.FC = () => {
             onChange={(e) => {
               const raw = e.target.value;
               if (/^\d*$/.test(raw)) {
-                const w = parseNumber(raw);
+                let w = parseNumber(raw);
+                if (w > 50000) {
+                  w = 50000;
+                  toast.error(
+                    "Maksimal berat kiriman adalah 50 kg (50.000 gram)"
+                  );
+                }
                 setItemData((prev) => ({ ...prev, weight: w }));
                 setItemTypeId(computeItemTypeId(itemData.description || "", w)); // ← update
                 resetServices();
@@ -312,7 +344,6 @@ const ShipmentDetailForm: React.FC = () => {
             placeholder="Masukkan berat dalam gram"
             className={inputStyle}
           />
-
         </div>
       </div>
 
