@@ -5,23 +5,7 @@ import { addOrderResultAtom } from "@/atom/order-atom";
 
 import {
   orderPayloadAtom,
-  // address data
-  senderAddressDataAtom,
-  receiverAddressDataAtom,
-  pickupAddressDataAtom,
-  emptyAddress,
-  // item & fee & product
-  itemDataAtom,
-  feeDataAtom,
-  itemTypeIdAtom,
-  productIdAtom,
-  productNameAtom,
-  // schedule
-  schedulePickupDataAtom,
-  defaultSchedulePickup,
-  // forms
-  senderFormAtom,
-  receiverFormAtom,
+  
 } from "@/atom/shipments-atom";
 
 import { Button } from "@/components/ui/button";
@@ -31,7 +15,7 @@ import useCheckHours from "@/hooks/useHours";
 import { cn, fetchApi, formatCurrency } from "@/lib/utils";
 import type { OrderResult } from "@/types/types";
 import { useMutation } from "@tanstack/react-query";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, } from "jotai";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -48,20 +32,6 @@ export default function ShipmentPrice() {
   const [orderResult, setOrderResult] = useAtom(addOrderResultAtom);
   const [orderError, setOrderError] = useAtom(errorOrderAtom);
 
-  // setters untuk RESET state sumber (bukan orderPayloadAtom)
-  const setSenderAddress = useSetAtom(senderAddressDataAtom);
-  const setReceiverAddress = useSetAtom(receiverAddressDataAtom);
-  const setPickupAddress = useSetAtom(pickupAddressDataAtom);
-
-  const setItemData = useSetAtom(itemDataAtom);
-  const setFeeData = useSetAtom(feeDataAtom);
-  const setItemTypeId = useSetAtom(itemTypeIdAtom);
-  const setProductId = useSetAtom(productIdAtom);
-  const setProductName = useSetAtom(productNameAtom);
-  const setSchedulePickup = useSetAtom(schedulePickupDataAtom);
-
-  const setSenderForm = useSetAtom(senderFormAtom);
-  const setReceiverForm = useSetAtom(receiverFormAtom);
 
   const { tommorowPickup } = useCheckHours(15);
 
@@ -91,54 +61,7 @@ export default function ShipmentPrice() {
       toast.success("Kiriman berhasil dibuat");
       setOrderResult(data.data);
 
-      // --- RESET Storage atom ---
-      setSenderAddress(emptyAddress());
-      setReceiverAddress(emptyAddress());
-      setPickupAddress(emptyAddress());
-
-      setItemData((prev) => ({
-        ...prev,
-        weight: 0,
-        length: 0,
-        width: 0,
-        height: 0,
-        diameter: 0,
-        value: 0,
-        description: "",
-        IsInsurance: "0",
-        arrivedEstimation: "",
-      }));
-      setFeeData({
-        feeAmount: 0,
-        insuranceAmount: 0,
-        discountAmount: 0,
-        feeTaxAmount: 0,
-        insuranceTaxAmount: 0,
-        codValue: 0,
-        totalAmount: 0,
-      });
-      setItemTypeId(0);
-      setProductId("");
-      setProductName("");
-
-      setSchedulePickup(defaultSchedulePickup());
-
-      setSenderForm({
-        name: "",
-        phoneNumber: "",
-        noteLabel: "",
-        courierNote: "",
-        isFavorite: false,
-      });
-      setReceiverForm({
-        name: "",
-        phoneNumber: "",
-        noteLabel: "",
-        courierNote: "",
-        isFavorite: false,
-      });
-      // -----------------------------------------------------------------------
-
+      
       setTimeout(() => {
         navigate("/payment-method");
       }, 600);

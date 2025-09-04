@@ -1,5 +1,4 @@
 import BoxArrow from "@/assets/icon/box-arrow.png";
-import Box from "@/assets/icon/box.png";
 import BoxHow from "@/assets/icon/box-how.png";
 
 import Pin from "@/assets/icon/pin.png";
@@ -18,15 +17,16 @@ import { RESET } from "jotai/utils";
 import { ChevronRight } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { dataUserAtomWithStorage } from "../../atom/home-atom";
+import CreateShipmentMenuCard from "./shipment/components/create-shipment-card";
 
 const DATA_MENU = [
-  {
-    name: "Buat Kiriman",
-    icon: Box,
-    href: "/new-shipment",
-    description:
-      "Siap kirim paket? Pesan pengiriman sekarang dan dapatkan harga terbaik!",
-  },
+  // {
+  //   name: "Buat Kiriman",
+  //   icon: Box,
+  //   href: "/new-shipment",
+  //   description:
+  //     "Siap kirim paket? Pesan pengiriman sekarang dan dapatkan harga terbaik!",
+  // },
   {
     name: "Cek Tarif",
     icon: BoxHow,
@@ -122,23 +122,25 @@ export default function Home() {
           </div>
         </div>
         <div className="mt-10 flex flex-col justify-around gap-3">
-          {DATA_MENU.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className="flex h-32 items-center gap-3 rounded-xl border bg-white p-3 text-start shadow-lg hover:bg-gray-100"
-            >
-              <img
-                src={item.icon}
-                alt="icon"
-                className="h-16 w-1/4 shrink-0 object-contain"
-              />
-              <div>
-                <p className="font-roboto font-semibold text-lg">{item.name}</p>
-                <p className="text-sm leading-6">{item.description}</p>
-              </div>
-            </Link>
-          ))}
+        <CreateShipmentMenuCard />
+
+              {DATA_MENU.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="flex h-32 items-center gap-3 rounded-xl border bg-white p-3 text-start shadow-lg hover:bg-gray-100"
+                >
+                  <img
+                    src={item.icon}
+                    alt="icon"
+                    className="h-16 w-1/4 shrink-0 object-contain"
+                  />
+                  <div>
+                    <p className="font-roboto font-semibold text-lg">{item.name}</p>
+                    <p className="text-sm leading-6">{item.description}</p>
+                  </div>
+                </Link>
+              ))}
         </div>
         <div className="mt-8">
           <Card className="bg-white shadow-lg">

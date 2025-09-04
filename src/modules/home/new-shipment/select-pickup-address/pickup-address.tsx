@@ -56,20 +56,31 @@ const PickupAddressContent: React.FC = () => {
   const handleSelect = (id: string) => setSelectedId(id);
 
   const prettyType = (label?: string, rawType?: string) => {
-    if (label && label.trim()) return label; // ✅ Prefer HERE label
+    if (label && label.trim()) return label; // UI label
     const t = (rawType ?? "").toLowerCase();
     if (t.includes("receiver")) return "Alamat Penerima";
     if (t.includes("sender") || t.includes("pickup")) return "Alamat Pengirim";
     return "Pilihan dari Peta";
   };
-  
-  const toAddressData = (entry: {
+
+  // ---- mapping helper: HistoryEntry -> AddressData
+  type HistoryEntry = {
     name: string;
     address: string;
     phone?: string;
-    shortLabel?: string; 
     postalCode: string | number;
-  }): AddressData => {
+
+    // from AddressHistory (opsional)
+    shortlabel?: string;
+    lat?: number;
+    lng?: number;
+    cityName?: string;
+    districtName?: string;
+    provinceName?: string | null;
+    villageName?: string;
+  };
+
+  const toAddressData = (entry: HistoryEntry): AddressData => {
     const zip = Number(entry.postalCode) || 0;
     return {
       ...emptyAddress(),
@@ -77,16 +88,42 @@ const PickupAddressContent: React.FC = () => {
       phone: entry.phone ?? "",
       address: entry.address || "",
       zipCode: zip,
+
+      latitude: entry.lat != null ? String(entry.lat) : "",
+      longitude: entry.lng != null ? String(entry.lng) : "",
+
+      shortlabel: entry.shortlabel || "",
+
+      cityName: entry.cityName || "",
+      districtName: entry.districtName || "",
+      provinceName: entry.provinceName ?? null,
+      villageName: entry.villageName || "",
+
+      // biarkan semua ID wilayah null jika tidak tersedia
+      cityId: null,
+      districtId: null,
+      provinceId: null,
+      villageId: null,
     };
   };
 
+  // ---- confirm from history
   const handleConfirmAddress = (address: {
     id: string;
-    label: string;
+    label: string; // fallback label (jangan untuk shortlabel kalau ada yang spesifik)
     name: string;
     address: string;
-    postalCode?: string;
+    postalCode?: string | number;
     phone?: string;
+
+    // tambahan dari history:
+    lat?: number;
+    lng?: number;
+    cityName?: string;
+    districtName?: string;
+    provinceName?: string | null;
+    villageName?: string;
+    shortlabel?: string;
   }) => {
     if (!address.postalCode) {
       alert("Kode pos tidak ditemukan di data riwayat");
@@ -103,8 +140,16 @@ const PickupAddressContent: React.FC = () => {
       name: address.name,
       address: address.address,
       phone: address.phone,
-      shortLabel: address.label, 
       postalCode: address.postalCode,
+
+      // propagate semua field dari history
+      shortlabel: address.shortlabel ?? address.label,
+      lat: address.lat,
+      lng: address.lng,
+      cityName: address.cityName,
+      districtName: address.districtName,
+      provinceName: address.provinceName,
+      villageName: address.villageName,
     });
 
     if (currentStep === StepEnum.SENDER) {
@@ -161,9 +206,7 @@ const PickupAddressContent: React.FC = () => {
       />
 
       <div>
-        <h2 className="pb-2 font-bold text-gray-400 text-sm">
-          RIWAYAT PENCARIAN
-        </h2>
+        <h2 className="pb-2 font-bold text-gray-400 text-sm">RIWAYAT PENCARIAN</h2>
         {history.length === 0 && (
           <p className="text-gray-500 text-sm">Riwayat Alamat Tidak ada.</p>
         )}
@@ -173,7 +216,7 @@ const PickupAddressContent: React.FC = () => {
           {filteredHistory.map((item) => (
             <SearchHistoryCard
               key={item.id}
-              title={prettyType(item.label)}
+              title={prettyType(item.label)} // UI only
               subtitle={item.customerName}
               subsubtitle={item.address}
               isSelected={selectedId === item.id}
@@ -182,11 +225,21 @@ const PickupAddressContent: React.FC = () => {
               onConfirm={() =>
                 handleConfirmAddress({
                   id: item.id,
-                  label: prettyType(item.label),
+                  // gunakan label riil untuk data (bukan prettyType)
+                  label: item.label ?? "",
                   name: item.customerName,
                   address: item.address,
                   phone: item.phone,
                   postalCode: item.zipCode,
+
+                  // propagate semua field tambahan dari history
+                  lat: item.lat,
+                  lng: item.lng,
+                  cityName: item.cityName,
+                  districtName: item.districtName,
+                  provinceName: item.provinceName,
+                  villageName: item.villageName,
+                  shortlabel: item.shortlabel ?? item.label ?? "",
                 })
               }
             />

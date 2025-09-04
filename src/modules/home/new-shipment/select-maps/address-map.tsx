@@ -309,17 +309,20 @@ const PickupAddress: React.FC = () => {
   
     addhistory({
       id: `${Date.now()}`,
-      
       customerName: "",
       phone: "",
-      address: addressText,    
+      address: addressText,
       label: details.label,
-         
-      zipCode: details.postalCode ? String(details.postalCode) : "",    
+      zipCode: details.postalCode ? String(details.postalCode) : "",
       lat: details.lat,
       lng: details.lng,
-    });
   
+      cityName: details.city,
+      districtName: details.district,
+      provinceName: details.province,
+      villageName: details.subdistrict,
+      shortlabel: details.label,  // konsisten dengan AddressData
+    });
     navigate(`/new-shipment?step=${currentStep}`);
   };
   const goTo = useCallback((pos: LatLng) => {

@@ -1,4 +1,4 @@
-import { addOrderResultAtom, orderPayloadAtom } from "@/atom/order-atom";
+import { addOrderResultAtom } from "@/atom/order-atom";
 import {
   selectedPaymentMethodAtom,
   underPaymentAtom,
@@ -19,6 +19,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import HowToPayCard from "./components/how-to-pay-card";
 import useClearShipment from "@/hooks/useClearShipment";
 import useTitle from "@/hooks/useTitle";
+ import { orderPayloadAtom } from "@/atom/shipments-atom";
+
 
 export default function Payment() {
   useTitle("Pembayaran");
@@ -32,6 +34,7 @@ export default function Payment() {
   const [initLoad, setInitLoad] = useState<boolean>(false);
   const [_, setCopied] = useState<boolean>(false);
   const checkHistoryHandler = useClearShipment({ navigateTo: "/history" });
+const total = orderPayload?.feeData?.totalAmount ?? underPayment.amount ?? 0;
 
   const { isLoading, data: checkVaResult } = useQuery({
     queryKey: ["check-va", orderResult.bookingId, paymentMethod.id],
@@ -212,7 +215,7 @@ export default function Payment() {
             <p className="my-3 font-bold text-lg">Total Pembayaran</p>
             <p className="font-bold text-brand-500 text-xl">
               {formatCurrency(
-                orderPayload.feeData.totalAmount ?? underPayment.amount
+                total
               )}
             </p>
           </div>

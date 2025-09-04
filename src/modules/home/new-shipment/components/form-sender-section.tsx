@@ -157,7 +157,7 @@ const FormSenderSection = () => {
       <div className="space-y-1">
         <Label className="text-[#0D1440] text-[15px]">Nomor HP Pengirim</Label>
         <Input
-          placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
+          placeholder="08xxxxxxxxxx"
           onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
 
           type="tel"

@@ -173,7 +173,7 @@ const FormReceiverSection = () => {
       <div className="space-y-1">
         <Label className="text-[#0D1440] text-[15px]">Nomor HP Penerima</Label>
         <Input
-          placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
+          placeholder="08xxxxxxxxxx"
           type="tel"
           value={form.phoneNumber}
           onChange={(e) => {

@@ -201,14 +201,20 @@ export const orderPayloadAtom = atom<OrderShipmentPayload>((get) => ({
 
 /* ---------- Address history ---------- */
 export type AddressHistory = {
-  id: string; // unique ID
-  label?: string; // optional label for quick reference
+  id: string;
+  label?: string;        // untuk display bebas
   customerName: string;
   phone: string;
   address: string;
-  zipCode?: string;
+  zipCode?: string;      // biarkan string seperti sekarang
   lat: number;
   lng: number;
+
+  cityName?: string;
+  districtName?: string;
+  provinceName?: string | null;
+  villageName?: string;
+  shortlabel?: string;   // PERHATIKAN: 'l' kecil (match AddressData)
 };
 
 export const addressHistoryAtom = atomWithStorage<AddressHistory[]>(
