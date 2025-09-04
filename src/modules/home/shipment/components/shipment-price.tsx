@@ -236,7 +236,10 @@ export default function ShipmentPrice() {
         )}
       </Button>
 
-      <Button variant="link" className="w-full text-brand-500 text-xs">
+      <Button
+                  onClick={() => navigate("/")}
+
+       variant="link" className="w-full text-brand-500 text-xs">
         Kembali ke Halaman Utama
       </Button>
     </div>
