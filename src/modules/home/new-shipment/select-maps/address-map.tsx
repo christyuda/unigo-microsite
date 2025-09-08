@@ -41,7 +41,6 @@ type LocationDetails = {
   lat: number;
   lng: number;
   label: string;
-
 };
 
 async function reverseGeocodeHere(
@@ -54,12 +53,12 @@ async function reverseGeocodeHere(
     const res = await fetch(url);
     const data = await res.json();
     const addr = data?.items?.[0]?.address;
+    if (!addr) return null;
+
     const street = addr.street || "";
     const house = addr.houseNumber ? ` ${addr.houseNumber}` : "";
     const uiLabel = `${street}${house}`.trim() || addr.label || "";
 
-
-    if (!addr) return null;
     return {
       address: addr.label || "",
       label: uiLabel,
@@ -75,32 +74,32 @@ async function reverseGeocodeHere(
     return null;
   }
 }
+
 function withHereZip(addr: string, zip?: string): string {
   if (!zip) return addr || "";
-  const reIDZip = /\b\d{5}\b/;          
-  if (reIDZip.test(addr)) {
-    return addr.replace(reIDZip, zip);
-  }
+  const reIDZip = /\b\d{5}\b/;
+  if (reIDZip.test(addr)) return addr.replace(reIDZip, zip);
   if (addr.endsWith(zip) || addr.includes(`, ${zip}`)) return addr;
   return addr ? `${addr}, ${zip}` : zip;
 }
+
 async function reverseGeocodeGoogle(
   lat: number,
   lng: number
 ): Promise<{ formattedAddress: string; route?: string; streetNumber?: string } | null> {
   return new Promise((resolve) => {
-    if (!('google' in window)) return resolve(null);
+    if (!("google" in window)) return resolve(null);
     const geocoder = new google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results?.[0]) {
+      if (status === "OK" && results?.[0]) {
         const r = results[0];
         const comps = r.address_components || [];
         const get = (t: string) =>
-          comps.find((c) => c.types.includes(t))?.long_name || '';
+          comps.find((c) => c.types.includes(t))?.long_name || "";
         resolve({
-          formattedAddress: r.formatted_address || '',
-          route: get('route'),
-          streetNumber: get('street_number'),
+          formattedAddress: r.formatted_address || "",
+          route: get("route"),
+          streetNumber: get("street_number"),
         });
       } else {
         resolve(null);
@@ -124,18 +123,17 @@ async function resolveAddressHybrid(
   const googleAddr = g?.formattedAddress || h?.address || "";
   const hereZip = h?.postalCode || "";
   return {
-    address: withHereZip(googleAddr, hereZip), // 👈 tampilkan ZIP dari HERE
-    label: googleLabel || h?.label || '',
-    city: h?.city || '',
-    province: h?.province || '',
-    district: h?.district || '',
-    subdistrict: h?.subdistrict || '',
-    postalCode: h?.postalCode || '', // ← tetap dari HERE
+    address: withHereZip(googleAddr, hereZip), // tampilkan ZIP dari HERE
+    label: googleLabel || h?.label || "",
+    city: h?.city || "",
+    province: h?.province || "",
+    district: h?.district || "",
+    subdistrict: h?.subdistrict || "",
+    postalCode: h?.postalCode || "", // tetap dari HERE
     lat,
     lng,
   };
 }
-
 
 function toAddressData(d: LocationDetails): AddressData {
   return {
@@ -148,25 +146,31 @@ function toAddressData(d: LocationDetails): AddressData {
     zipCode: Number(d.postalCode) || 0,
     longitude: String(d.lng),
     latitude: String(d.lat),
-    shortlabel: d.label, 
+    shortlabel: d.label,
   };
 }
 
 /* ───────── tiny hooks ───────── */
 
-function useGeolocationOnce(fallback: LatLng): [LatLng, boolean] {
+function useGeolocationOnce(
+  fallback: LatLng
+): [LatLng, boolean, GeolocationPositionError | null] {
   const [pos, setPos] = useState<LatLng>(fallback);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<GeolocationPositionError | null>(null);
+
   useEffect(() => {
     let active = true;
     navigator.geolocation.getCurrentPosition(
       (p) => {
         if (!active) return;
         setPos({ lat: p.coords.latitude, lng: p.coords.longitude });
+        setError(null);
         setLoading(false);
       },
-      () => {
+      (err) => {
         if (!active) return;
+        setError(err as GeolocationPositionError);
         setLoading(false);
       },
       { enableHighAccuracy: true, maximumAge: 30_000, timeout: 8_000 }
@@ -175,7 +179,8 @@ function useGeolocationOnce(fallback: LatLng): [LatLng, boolean] {
       active = false;
     };
   }, []);
-  return [pos, loading];
+
+  return [pos, loading, error];
 }
 
 function useMapReady(): [boolean] {
@@ -183,8 +188,6 @@ function useMapReady(): [boolean] {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     if (!map) return;
-    
-    
     setReady(false);
     const off1 = map.addListener("tilesloaded", () => setReady(true));
     const off2 = map.addListener("idle", () => setReady(true));
@@ -217,22 +220,38 @@ const PickupAddress: React.FC = () => {
     lng: 106.816666,
   });
   const [details, setDetails] = useState<LocationDetails | null>(null);
-  const [addressText, setAddressText] = useState(""); 
+  const [addressText, setAddressText] = useState("");
+
   // posisi awal & status map
-  const [initialCenter, geoLoading] = useGeolocationOnce(markerPosition);
+  const [initialCenter, geoLoading, geoError] = useGeolocationOnce(markerPosition);
   const [mapReady] = useMapReady();
+  const [showGeoWarning, setShowGeoWarning] = useState(true);
+
   const map = useMap();
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+
+  // alert once when permission denied/blocked
+  useEffect(() => {
+    if (!geoError) return;
+    if (geoError.code === 1) {
+      alert(
+        "Akses lokasi diblokir/dinonaktifkan. Aktifkan izin lokasi di pengaturan browser (Site settings → Location), lalu coba lagi."
+      );
+    } else {
+      alert(
+        "Lokasi otomatis tidak dapat diambil. Anda masih bisa mencari lokasi atau geser pin secara manual."
+      );
+    }
+  }, [geoError]);
 
   // apply posisi awal -> marker & detail
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (details?.address) setAddressText(details.address);
   }, [details?.address]);
+
   useEffect(() => {
     setMarkerPosition(initialCenter);
-    // fetch detail pertama kali
-    
     (async () => {
       const d = await resolveAddressHybrid(initialCenter.lat, initialCenter.lng);
       if (d) {
@@ -243,7 +262,7 @@ const PickupAddress: React.FC = () => {
         else if (currentStep === StepEnum.RECEIVER) setReceiverAddress(payload);
       }
     })();
-  }, [initialCenter.lat, initialCenter.lng]);
+  }, [initialCenter.lat, initialCenter.lng]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const overallLoading = geoLoading || !mapReady;
 
@@ -261,7 +280,7 @@ const PickupAddress: React.FC = () => {
       const d = await resolveAddressHybrid(pos.lat, pos.lng);
       if (!d) return;
       setDetails(d);
-      setAddressText(d.address); 
+      setAddressText(d.address);
       const payload = toAddressData(d);
       setPickupAddress(payload);
       if (currentStep === StepEnum.SENDER) setSenderAddress(payload);
@@ -290,14 +309,19 @@ const PickupAddress: React.FC = () => {
     geocoderRef.current.geocode({ address: searchQuery }, (results, status) => {
       if (status === "OK" && results?.[0]) {
         const loc = results[0].geometry.location;
-        goTo({ lat: loc.lat(), lng: loc.lng() });  
+        goTo({ lat: loc.lat(), lng: loc.lng() });
       }
     });
   };
+
   const saveAddress = () => {
-    if (!details) return; 
-    const payload = { ...toAddressData(details), address: addressText, shortLabel: details.label,   };
-  
+    if (!details) return;
+    const payload = {
+      ...toAddressData(details),
+      address: addressText,
+      shortLabel: details.label,
+    };
+
     setPickupAddress(payload);
     if (currentStep === StepEnum.SENDER) {
       setSenderAddress(payload);
@@ -306,7 +330,7 @@ const PickupAddress: React.FC = () => {
       setReceiverAddress(payload);
       setReceiverForm((p) => ({ ...p, courierNote }));
     }
-  
+
     addhistory({
       id: `${Date.now()}`,
       customerName: "",
@@ -316,138 +340,191 @@ const PickupAddress: React.FC = () => {
       zipCode: details.postalCode ? String(details.postalCode) : "",
       lat: details.lat,
       lng: details.lng,
-  
       cityName: details.city,
       districtName: details.district,
       provinceName: details.province,
       villageName: details.subdistrict,
-      shortlabel: details.label,  // konsisten dengan AddressData
+      shortlabel: details.label, // konsisten dengan AddressData
     });
+
     navigate(`/new-shipment?step=${currentStep}`);
   };
-  const goTo = useCallback((pos: LatLng) => {
-    // move marker + resolve HERE/Google (updates details & atoms)
-    setPosAndResolve(pos);
-    // center/zoom map to that marker
-    panTo(pos);
-  }, [panTo, setPosAndResolve]);
 
+  const goTo = useCallback(
+    (pos: LatLng) => {
+      setPosAndResolve(pos); // update marker + atoms
+      panTo(pos); // center/zoom map
+    },
+    [panTo, setPosAndResolve]
+  );
 
-    return (
-      <div className="w-full">
-        {/* Map wrapper */}
-        <div
-  className={
-    isFullScreen
-      ? "fixed inset-0 z-[9999] m-0 h-[100dvh] min-h-[100dvh] w-[100vw] bg-white"
-      : "relative mt-5 h-[360px] min-h-[360px] w-full"
-  }
->
-          {/* Search box */}
-          <div className="absolute top-4 right-4 left-4 z-20">
-            <div className="flex items-center gap-2 rounded-lg bg-white p-2 shadow">
-              
-              <PlaceAutocompleteInput
-                value={searchQuery}
-                onChange={setSearchQuery}
-                onPlaceSelect={(pos) => {            // pos: { lat, lng }
-                  goTo(pos);
-                }}                countryRestriction="id"
-                className="!h-12 rounded-[16px] px-4 text-[15px]"
-              />
-              <Button
-                onClick={handleSearchLocation}
-                className="!h-12 rounded-[16px] px-5 bg-orange-500 text-white"
-              >
-                Cari
-              </Button>
+  const retryGeolocation = useCallback(() => {
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        const pos = { lat: p.coords.latitude, lng: p.coords.longitude };
+        goTo(pos);
+        setShowGeoWarning(false);
+      },
+      () => {
+        alert(
+          "Masih tidak bisa mengakses lokasi. Aktifkan izin lokasi di pengaturan browser (ikon gembok/‘Site settings’)."
+        );
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 }
+    );
+  }, [goTo]);
+
+  return (
+    <div className="w-full">
+      {/* Geolocation warning banner */}
+      {geoError && showGeoWarning && (
+        <div className="mt-3 w-full rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-800">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">
+                {geoError.code === 1
+                  ? "Izin lokasi diblokir/dinonaktifkan."
+                  : "Gagal mengakses lokasi otomatis."}
+              </p>
+              <p className="mt-1 text-xs">
+                Aktifkan lokasi di browser (Site settings → Location), lalu tekan “Coba lagi”. Anda tetap
+                bisa mencari lokasi atau geser pin secara manual.
+              </p>
+              <div className="mt-2 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-amber-300 text-amber-800"
+                  onClick={retryGeolocation}
+                >
+                  Coba lagi
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowGeoWarning(false)}
+                >
+                  Tutup
+                </Button>
+              </div>
             </div>
           </div>
-    
-          {/* Map + marker */}
-          <div className="relative h-full w-full overflow-hidden rounded-[1em] border">
-            <GoogleMap
-              defaultZoom={13}
-              defaultCenter={initialCenter}
-              // center={markerPosition}       
-              onClick={handleMapClick}
-              
-              streetViewControl={false}
-              mapTypeControl={false}
-              fullscreenControl={true}
-              cameraControl={false}
-              className={`absolute inset-0 transition-opacity duration-200 ${
-                overallLoading ? "opacity-0" : "opacity-100"
-              }`}
+        </div>
+      )}
+
+      {/* Map wrapper */}
+      <div
+        className={
+          isFullScreen
+            ? "fixed inset-0 z-[9999] m-0 h-[100dvh] min-h-[100dvh] w-[100vw] bg-white"
+            : "relative mt-5 h-[360px] min-h-[360px] w-full"
+        }
+      >
+        {/* Search box */}
+        <div className="absolute top-4 right-4 left-4 z-20">
+          <div className="flex items-center gap-2 rounded-lg bg-white p-2 shadow">
+            <PlaceAutocompleteInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onPlaceSelect={(pos) => {
+                // pos: { lat, lng }
+                goTo(pos);
+              }}
+              countryRestriction="id"
+              className="!h-12 rounded-[16px] px-4 text-[15px]"
             />
-            <Marker position={markerPosition} draggable onDragEnd={handleMarkerDragEnd} />
-    
-            {overallLoading && (
-              <div className="pointer-events-none absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-7 w-7 animate-spin" />
-                  <span className="text-muted-foreground text-sm">Memuat peta…</span>
-                </div>
-              </div>
-            )}
-          </div>
-    
-          {/* Controls */}
-          <div className="absolute right-4 bottom-6 z-10 flex gap-2">
             <Button
-  onClick={() => { goTo(markerPosition); }}
-  className="rounded-full border bg-white p-2 shadow-md"
+              onClick={handleSearchLocation}
+              className="!h-12 rounded-[16px] px-5 bg-orange-500 text-white"
             >
-              <MapPin className="h-5 w-5 text-blue-500" />
-            </Button>
-            <Button
-              onClick={() => setIsFullScreen((v) => !v)}
-              className="rounded-full border bg-white p-2 shadow-md"
-            >
-              {isFullScreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+              Cari
             </Button>
           </div>
         </div>
-    
-        {/* Address info */}
-        <div className="mt-4 w-full space-y-4 rounded-[16px] bg-white px-4 py-6">
-          <div>
-            <p className="font-bold text-gray-400 text-sm">ALAMAT DIPILIH</p>
-            <Input
-              type="text"
-              value={addressText}
-              onChange={(e) => {
-                const address = e.target.value;
-                setAddressText(address);
 
-                setDetails(prev => (prev ? { ...prev, address } : null));
+        {/* Map + marker */}
+        <div className="relative h-full w-full overflow-hidden rounded-[1em] border">
+          <GoogleMap
+            defaultZoom={13}
+            defaultCenter={initialCenter}
+            // center={markerPosition} // optional: lock center to marker
+            onClick={handleMapClick}
+            streetViewControl={false}
+            mapTypeControl={false}
+            fullscreenControl={true}
+            cameraControl={false}
+            className={`absolute inset-0 transition-opacity duration-200 ${
+              overallLoading ? "opacity-0" : "opacity-100"
+            }`}
+          />
+          <Marker position={markerPosition} draggable onDragEnd={handleMarkerDragEnd} />
 
-              }}
-              placeholder={overallLoading ? "Mengambil alamat…" : "Tulis alamat lengkap…"}
-              className="mt-2 w-full !h-14 rounded-[16px] border px-4 text-[15px] placeholder:text-[#B7B7B7]"
-            />
-          </div>
-    
-          <div>
-            <Label>Catatan untuk kurir</Label>
-            <Input
-              placeholder="Contoh: Rumah, Kantor, Gudang..."
-              value={courierNote}
-              onChange={(e) => setCourierNote(e.target.value)}
-              className="mt-2 w-full !h-14 rounded-[16px] border px-4 text-[15px]"
-            />
-          </div>
-    
+          {overallLoading && (
+            <div className="pointer-events-none absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-7 w-7 animate-spin" />
+                <span className="text-muted-foreground text-sm">Memuat peta…</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Controls */}
+        <div className="absolute right-4 bottom-6 z-10 flex gap-2">
           <Button
-            className="!h-14 w-full rounded-xl bg-orange-500 font-semibold text-lg text-white hover:bg-orange-400 disabled:opacity-50"
-            onClick={saveAddress}
-            disabled={overallLoading}
+            onClick={() => {
+              goTo(markerPosition);
+            }}
+            className="rounded-full border bg-white p-2 shadow-md"
           >
-            Simpan
+            <MapPin className="h-5 w-5 text-blue-500" />
+          </Button>
+          <Button
+            onClick={() => setIsFullScreen((v) => !v)}
+            className="rounded-full border bg-white p-2 shadow-md"
+          >
+            {isFullScreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </Button>
         </div>
       </div>
-    );
-  }    
+
+      {/* Address info */}
+      <div className="mt-4 w-full space-y-4 rounded-[16px] bg-white px-4 py-6">
+        <div>
+          <p className="font-bold text-gray-400 text-sm">ALAMAT DIPILIH</p>
+          <Input
+            type="text"
+            value={addressText}
+            onChange={(e) => {
+              const address = e.target.value;
+              setAddressText(address);
+              setDetails((prev) => (prev ? { ...prev, address } : null));
+            }}
+            placeholder={overallLoading ? "Mengambil alamat…" : "Tulis alamat lengkap…"}
+            className="mt-2 w-full !h-14 rounded-[16px] border px-4 text-[15px] placeholder:text-[#B7B7B7]"
+          />
+        </div>
+
+        <div>
+          <Label>Catatan untuk kurir</Label>
+          <Input
+            placeholder="Contoh: Rumah, Kantor, Gudang..."
+            value={courierNote}
+            onChange={(e) => setCourierNote(e.target.value)}
+            className="mt-2 w-full !h-14 rounded-[16px] border px-4 text-[15px]"
+          />
+        </div>
+
+        <Button
+          className="!h-14 w-full rounded-xl bg-orange-500 font-semibold text-lg text-white hover:bg-orange-400 disabled:opacity-50"
+          onClick={saveAddress}
+          disabled={overallLoading}
+        >
+          Simpan
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 export default PickupAddress;
