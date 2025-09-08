@@ -55,7 +55,7 @@ export default function RateResult() {
 
   const setProductHandler = (value: string) => {
     const selectedProduct = serviceDetails.find(
-      (item) => item.serviceCode === value,
+      (item) => item.serviceCode === value
     );
     if (selectedProduct) setSelectedProduct(selectedProduct);
   };
@@ -102,80 +102,79 @@ export default function RateResult() {
 
   const setItemTypeId = useSetAtom(itemTypeIdAtom);
 
-// helper kecil buat konversi aman ke number
-const toNum = (v: unknown, def = 0) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : def;
-};
+  // helper kecil buat konversi aman ke number
+  const toNum = (v: unknown, def = 0) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : def;
+  };
 
-const goCreateShipment = () => {
-  // pastikan layanan sudah dipilih
-  if (!product?.serviceCode) {
-    toast.error("Silakan pilih layanan terlebih dahulu.");
-    return;
-  }
+  const goCreateShipment = () => {
+    // pastikan layanan sudah dipilih
+    if (!product?.serviceCode) {
+      toast.error("Silakan pilih layanan terlebih dahulu.");
+      return;
+    }
 
-  // destructure dengan default agar tidak ada undefined
-  const {
-    serviceCode,
-    serviceName = "",
-    fee = 0,
-    insurance = 0,
-    discount = 0,
-    feeTax = 0,
-    insuranceTax = 0,
-    totalFee = 0,
-    estimation = "",
-  } = product;
+    // destructure dengan default agar tidak ada undefined
+    const {
+      serviceCode,
+      serviceName = "",
+      fee = 0,
+      insurance = 0,
+      discount = 0,
+      feeTax = 0,
+      insuranceTax = 0,
+      totalFee = 0,
+      estimation = "",
+    } = product;
 
-  // validasi asal/tujuan
-  const s = splitAddress?.sender;
-  const r = splitAddress?.destination;
-  if (!s?.zipCode || !r?.zipCode) {
-    toast.error("Alamat asal & tujuan belum lengkap.");
-    navigate("/check-rate");
-    return;
-  }
+    // validasi asal/tujuan
+    const s = splitAddress?.sender;
+    const r = splitAddress?.destination;
+    if (!s?.zipCode || !r?.zipCode) {
+      toast.error("Alamat asal & tujuan belum lengkap.");
+      navigate("/check-rate");
+      return;
+    }
 
-  // 1) commit alamat pengirim/penerima
-  setSenderAddress(makeAddressData(s));
-  setReceiverAddress(makeAddressData(r));
+    // 1) commit alamat pengirim/penerima
+    setSenderAddress(makeAddressData(s));
+    setReceiverAddress(makeAddressData(r));
 
-  // 2) commit layanan & biaya
-  setProductId(String(serviceCode));
-  setProductName(serviceName);
-  setFeeData({
-    feeAmount: Number(fee),
-    insuranceAmount: Number(insurance),
-    discountAmount: Number(discount),
-    feeTaxAmount: Number(feeTax),
-    insuranceTaxAmount: Number(insuranceTax),
-    codValue: 0,
-    totalAmount: Number(totalFee),
-  });
+    // 2) commit layanan & biaya
+    setProductId(String(serviceCode));
+    setProductName(serviceName);
+    setFeeData({
+      feeAmount: Number(fee),
+      insuranceAmount: Number(insurance),
+      discountAmount: Number(discount),
+      feeTaxAmount: Number(feeTax),
+      insuranceTaxAmount: Number(insuranceTax),
+      codValue: 0,
+      totalAmount: Number(totalFee),
+    });
 
-  // (opsional) simpan jenis item dari cek tarif
-  setItemTypeId(toNum(checkRatePayload.itemTypeId, 1));
+    // (opsional) simpan jenis item dari cek tarif
+    setItemTypeId(toNum(checkRatePayload.itemTypeId, 1));
 
-  // 3) commit itemData dari form Cek Tarif
-  const insured = (checkRatePayload.isInsurance as "0" | "1") ?? "0";
-  setItemData({
-    weight: toNum(checkRatePayload.weight),
-    length: toNum(checkRatePayload.length),
-    width: toNum(checkRatePayload.width),
-    height: toNum(checkRatePayload.height),
-    diameter: 0,
-    value: insured === "1" ? toNum(checkRatePayload.valueGoods) : 0,
-    description: "", 
-    IsInsurance: insured,
-    arrivedEstimation: estimation,
-  });
+    // 3) commit itemData dari form Cek Tarif
+    const insured = (checkRatePayload.isInsurance as "0" | "1") ?? "0";
+    setItemData({
+      weight: toNum(checkRatePayload.weight),
+      length: toNum(checkRatePayload.length),
+      width: toNum(checkRatePayload.width),
+      height: toNum(checkRatePayload.height),
+      diameter: 0,
+      value: insured === "1" ? toNum(checkRatePayload.valueGoods) : 0,
+      description: "",
+      IsInsurance: insured,
+      arrivedEstimation: estimation,
+    });
 
-  // 4) lanjut ke flow pengirim, alamat sdh terisi
-  setStep(StepEnum.SENDER);
-  navigate("/new-shipment?step=sender");
-};
-
+    // 4) lanjut ke flow pengirim, alamat sdh terisi
+    setStep(StepEnum.SENDER);
+    navigate("/new-shipment?step=sender");
+  };
 
   return (
     <HomeLayout>
@@ -197,7 +196,10 @@ const goCreateShipment = () => {
                   id={opt.serviceCode}
                   className="sr-only"
                 />
-                <Label htmlFor={opt.serviceCode} className="block w-full cursor-pointer">
+                <Label
+                  htmlFor={opt.serviceCode}
+                  className="block w-full cursor-pointer"
+                >
                   <Card
                     className={cn("relative w-full max-w-md place-items-end", {
                       "border-brand-500 bg-brand-50":
@@ -206,11 +208,12 @@ const goCreateShipment = () => {
                         product.serviceCode !== opt.serviceCode,
                     })}
                   >
-                    <CardContent className="mb-4 flex w-full items-end justify-between p-3">
+                    <CardContent className="mb-4 flex w-full items-start justify-between gap-3 p-3">
+                      {/* LEFT column: label */}
                       <div
                         className={cn(
-                          "flex w-2/4 flex-col justify-center gap-3 text-start text-gray-400 text-sm",
-                          { "w-3/4": opt.discount !== 0 },
+                          // use flexible columns instead of hard 1/2 widths
+                          "flex flex-1 flex-col justify-center gap-3 text-start text-gray-400 text-sm"
                         )}
                       >
                         <p className="mt-2 font-semibold text-[15px] text-black capitalize">
@@ -219,17 +222,30 @@ const goCreateShipment = () => {
                         <p>Tarif</p>
                         <p>Estimasi</p>
                       </div>
-                      <div className="flex w-2/4 flex-col justify-center gap-3 text-start text-sm">
-                        <div className="flex w-full items-center justify-between gap-2 pt-3">
-                          <p className="font-bold text-brand-500 text-lg">
+
+                      {/* RIGHT column: values */}
+                      <div className="flex flex-1 flex-col justify-center gap-3 text-start text-sm">
+                        {/* PRICE row */}
+                        <div
+                          className="
+        flex w-full flex-col sm:flex-row sm:items-center sm:justify-between
+        gap-1 sm:gap-2 pt-3 min-w-0
+      "
+                        >
+                          <p className="font-bold text-brand-500 text-xl leading-tight whitespace-nowrap shrink-0">
                             {formatCurrency(opt.totalFee)}
                           </p>
+
                           {opt.discount !== 0 && (
-                            <p className="text-gray-500 line-through">
-                              {formatCurrency(opt.fee + opt.feeTax + opt.discount)}
+                            <p className="text-gray-500 line-through whitespace-nowrap shrink-0">
+                              {formatCurrency(
+                                opt.fee + opt.feeTax + opt.discount
+                              )}
                             </p>
                           )}
                         </div>
+
+                        {/* ESTIMATION */}
                         <p className="mt-1 text-xs">
                           {opt.estimation.toLowerCase().includes("0 hari")
                             ? "Hari ini"
@@ -238,7 +254,8 @@ const goCreateShipment = () => {
                       </div>
                     </CardContent>
 
-                    {(checkRatePayload.isInsurance === "1" || opt.insurance !== 0) && (
+                    {(checkRatePayload.isInsurance === "1" ||
+                      opt.insurance !== 0) && (
                       <div className="absolute right-1 bottom-0 flex-none gap-3 p-2 text-start">
                         <p className="truncate text-[8px] text-gray-400">
                           *Tarif dasar + asuransi
@@ -274,4 +291,3 @@ const goCreateShipment = () => {
     </HomeLayout>
   );
 }
-  
