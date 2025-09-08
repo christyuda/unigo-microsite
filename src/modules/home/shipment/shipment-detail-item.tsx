@@ -450,7 +450,7 @@ export default function ShipmentDetailItemBookingId() {
                   <div className="w-full">
                     <p>Nomor Virtual Account </p>
                     <div className="flex items-end justify-between gap-2">
-                      {shipmentDetail.vaNumber.length > 0 ? (
+                    {((shipmentDetail?.vaNumber?.length ?? 0) > 0) ? (
                         <p className="font-semibold text-black text-lg underline">
                           {paymentMethodData?.prefix ?? ""}
                           {shipmentDetail.vaNumber ?? "-"}
@@ -465,7 +465,7 @@ export default function ShipmentDetailItemBookingId() {
                           Buat Nomor VA
                         </Button>
                       )}
-                      {shipmentDetail.vaNumber.length > 0 && (
+    {((shipmentDetail?.vaNumber?.length ?? 0) > 0) && (
                         <Button
                           variant={"link"}
                           className="px -0 m-0 gap-2 border text-sm"
