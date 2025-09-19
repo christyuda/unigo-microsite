@@ -25,7 +25,7 @@ const FormReceiverSection = () => {
   const [form, setForm] = useAtom(receiverFormAtom);
   const [, setStep] = useAtom(currentStepAtom);
   const [receiverAddressData, setReceiverAddressData] = useAtom(
-    receiverAddressDataAtom
+    receiverAddressDataAtom,
   );
   const navigate = useNavigate();
   const [showErrors, setShowErrors] = useState(false);
@@ -65,7 +65,7 @@ const FormReceiverSection = () => {
     if (!receiverAddressData) return;
 
     const { noteLabel, courierNote } = splitAddressNotes(
-      receiverAddressData.address
+      receiverAddressData.address,
     );
 
     setForm((prev) => ({
@@ -84,8 +84,8 @@ const FormReceiverSection = () => {
     noteLabel: !form.isFavorite
       ? true
       : labelOption !== "lainnya"
-      ? true
-      : !!form.noteLabel && form.noteLabel.trim().length > 0,
+        ? true
+        : !!form.noteLabel && form.noteLabel.trim().length > 0,
   };
 
   const isValid = validate.name && validate.phone && validate.noteLabel;
@@ -159,7 +159,7 @@ const FormReceiverSection = () => {
             inputStyle,
             (showErrors || touched.name) && !validate.name
               ? "border-red-500"
-              : "border-[#E3E3E3]"
+              : "border-[#E3E3E3]",
           )}
         />
         {(showErrors || touched.name) && !validate.name && (
@@ -178,7 +178,7 @@ const FormReceiverSection = () => {
           value={form.phoneNumber}
           onChange={(e) => {
             const value = e.target.value;
-            if (/^(0\d{0,13}|62\d{0,13})$/.test(value)) {
+            if (/^0\d{0,12}$/.test(value)) {
               handleChange("phoneNumber", value);
             }
           }}
@@ -187,13 +187,12 @@ const FormReceiverSection = () => {
             inputStyle,
             (showErrors || touched.phone) && !validate.phone
               ? "border-red-500"
-              : "border-[#E3E3E3]"
+              : "border-[#E3E3E3]",
           )}
         />
         {(showErrors || touched.phone) && !validate.phone && (
           <p className="mt-1 text-red-500 text-sm">
-            Nomor HP penerima wajib diisi dengan minimal 10 digit (diawali
-            08/62).
+            Nomor HP penerima wajib diisi dengan minimal 10 digit (diawali 08).
           </p>
         )}
       </div>
@@ -234,7 +233,6 @@ const FormReceiverSection = () => {
                 handleChange("noteLabel", "");
               }
               if (!val) setTouched((t) => ({ ...t, noteLabel: false }));
-
             }}
             className={form.isFavorite ? "bg-orange-500" : "bg-gray-300"}
           />
@@ -264,7 +262,7 @@ const FormReceiverSection = () => {
                   inputStyle,
                   (showErrors || touched.noteLabel) && !validate.noteLabel
                     ? "border-red-500"
-                    : "border-[#E3E3E3]"
+                    : "border-[#E3E3E3]",
                 )}
               />
               {(showErrors || touched.noteLabel) && !validate.noteLabel && (
@@ -296,7 +294,7 @@ const FormReceiverSection = () => {
                 className={cn(
                   "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
                   "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                  "peer-data-[state=checked]:border-orange-500"
+                  "peer-data-[state=checked]:border-orange-500",
                 )}
               >
                 Rumah
@@ -314,7 +312,7 @@ const FormReceiverSection = () => {
                 className={cn(
                   "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
                   "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                  "peer-data-[state=checked]:border-orange-500"
+                  "peer-data-[state=checked]:border-orange-500",
                 )}
               >
                 Kantor
@@ -332,7 +330,7 @@ const FormReceiverSection = () => {
                 className={cn(
                   "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
                   "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                  "peer-data-[state=checked]:border-orange-500"
+                  "peer-data-[state=checked]:border-orange-500",
                 )}
               >
                 Lainnya

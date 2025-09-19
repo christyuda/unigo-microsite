@@ -25,15 +25,19 @@ const FormSenderSection = () => {
   const [form, setForm] = useAtom(senderFormAtom);
   const [, setStep] = useAtom(currentStepAtom);
   const [senderAddressData, setSenderAddressData] = useAtom(
-    senderAddressDataAtom
+    senderAddressDataAtom,
   );
-  
+
   const navigate = useNavigate();
   const [showErrors, setShowErrors] = useState(false);
   const [labelOption, setLabelOption] = useState<
     "rumah" | "kantor" | "lainnya"
   >("lainnya");
-  const [touched, setTouched] = useState({ name: false, phone: false, noteLabel: false });
+  const [touched, setTouched] = useState({
+    name: false,
+    phone: false,
+    noteLabel: false,
+  });
 
   const splitAddressNotes = (raw?: string) => {
     const parts = (raw ?? "")
@@ -56,7 +60,7 @@ const FormSenderSection = () => {
   useEffect(() => {
     if (!senderAddressData) return;
     const { noteLabel, courierNote } = splitAddressNotes(
-      senderAddressData.address
+      senderAddressData.address,
     );
 
     setForm((prev) => ({
@@ -75,8 +79,8 @@ const FormSenderSection = () => {
     noteLabel: !form.isFavorite
       ? true
       : labelOption !== "lainnya"
-      ? true
-      : !!form.noteLabel && form.noteLabel.trim().length > 0,
+        ? true
+        : !!form.noteLabel && form.noteLabel.trim().length > 0,
   };
   const isValid = validate.name && validate.phone && validate.noteLabel;
 
@@ -145,12 +149,16 @@ const FormSenderSection = () => {
           }}
           className={cn(
             inputStyle,
-            ((showErrors || touched.name) && !validate.name) ? "border-red-500" : "border-[#E3E3E3]"
+            (showErrors || touched.name) && !validate.name
+              ? "border-red-500"
+              : "border-[#E3E3E3]",
           )}
         />
         {(showErrors || touched.name) && !validate.name && (
-  <p className="mt-1 text-red-500 text-sm">Nama pengirim wajib diisi (min. 2 huruf).</p>
-)}
+          <p className="mt-1 text-red-500 text-sm">
+            Nama pengirim wajib diisi (min. 2 huruf).
+          </p>
+        )}
       </div>
 
       {/* Nomor HP */}
@@ -159,25 +167,26 @@ const FormSenderSection = () => {
         <Input
           placeholder="08xxxxxxxxxx"
           onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
-
           type="tel"
           value={form.phoneNumber}
           onChange={(e) => {
             const value = e.target.value;
-            if (/^(0\d{0,13}|62\d{0,13})$/.test(value)) {
+            if (/^0\d{0,12}$/.test(value)) {
               handleChange("phoneNumber", value);
             }
           }}
           className={cn(
             inputStyle,
-            ((showErrors || touched.phone) && !validate.phone) ? "border-red-500" : "border-[#E3E3E3]"
+            (showErrors || touched.phone) && !validate.phone
+              ? "border-red-500"
+              : "border-[#E3E3E3]",
           )}
         />
-       {(showErrors || touched.phone) && !validate.phone && (
-  <p className="mt-1 text-red-500 text-sm">
-    Nomor HP pengirim wajib diisi dengan minimal 10 digit (diawali 08 atau 62).
-  </p>
-)}
+        {(showErrors || touched.phone) && !validate.phone && (
+          <p className="mt-1 text-red-500 text-sm">
+            Nomor HP pengirim wajib diisi dengan minimal 10 digit (diawali 08).
+          </p>
+        )}
       </div>
 
       {/* Catatan Untuk Kurir */}
@@ -229,9 +238,7 @@ const FormSenderSection = () => {
               <Input
                 placeholder="Contoh: Gudang 1, Lantai 2..."
                 onBlur={() => setTouched((t) => ({ ...t, noteLabel: true }))}
-
                 value={form.noteLabel}
-                
                 onChange={(e) => {
                   const value = e.target.value;
                   if (/^[a-zA-Z0-9\s.'-]*$/.test(value) || value === "") {
@@ -240,14 +247,16 @@ const FormSenderSection = () => {
                 }}
                 className={cn(
                   inputStyle,
-                  ((showErrors || touched.noteLabel) && !validate.noteLabel) ? "border-red-500" : "border-[#E3E3E3]"
+                  (showErrors || touched.noteLabel) && !validate.noteLabel
+                    ? "border-red-500"
+                    : "border-[#E3E3E3]",
                 )}
               />
               {(showErrors || touched.noteLabel) && !validate.noteLabel && (
-  <p className="mt-1 text-red-500 text-sm">
-    Label catatan wajib diisi jika menyimpan ke favorit.
-  </p>
-)}
+                <p className="mt-1 text-red-500 text-sm">
+                  Label catatan wajib diisi jika menyimpan ke favorit.
+                </p>
+              )}
             </div>
           )}
 
@@ -272,7 +281,7 @@ const FormSenderSection = () => {
                 className={cn(
                   "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
                   "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                  "peer-data-[state=checked]:border-orange-500"
+                  "peer-data-[state=checked]:border-orange-500",
                 )}
               >
                 Rumah
@@ -290,7 +299,7 @@ const FormSenderSection = () => {
                 className={cn(
                   "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
                   "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                  "peer-data-[state=checked]:border-orange-500"
+                  "peer-data-[state=checked]:border-orange-500",
                 )}
               >
                 Kantor
@@ -308,7 +317,7 @@ const FormSenderSection = () => {
                 className={cn(
                   "w-full cursor-pointer rounded-[12px] border px-4 py-3 text-center font-medium",
                   "peer-data-[state=checked]:bg-orange-500 peer-data-[state=checked]:text-white",
-                  "peer-data-[state=checked]:border-orange-500"
+                  "peer-data-[state=checked]:border-orange-500",
                 )}
               >
                 Lainnya

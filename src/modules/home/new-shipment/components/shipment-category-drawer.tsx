@@ -125,6 +125,7 @@ const ShipmentCategoryDrawer = ({
             <textarea
               placeholder="Tuliskan deskripsi isi kiriman..."
               value={description}
+              maxLength={50}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[90px] w-full rounded-xl border border-gray-300 p-3 text-sm placeholder:text-gray-400"
             />
