@@ -23,7 +23,6 @@ const quickCategories = [
   { label: "Otomotif", icon: <Car size={16} /> },
 ];
 
-
 const ShipmentCategorySelector = () => {
   const [itemData, setItemData] = useAtom(itemDataAtom);
   const [, setItemTypeId] = useAtom(itemTypeIdAtom);
@@ -32,7 +31,9 @@ const ShipmentCategorySelector = () => {
     return t === "dokumen" && weight <= 2000 ? 0 : 1;
   };
   useEffect(() => {
-    setItemTypeId(computeItemTypeId(itemData.description || "", itemData.weight));
+    setItemTypeId(
+      computeItemTypeId(itemData.description || "", itemData.weight),
+    );
   }, [itemData.description, itemData.weight]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -64,7 +65,8 @@ const ShipmentCategorySelector = () => {
             onClick={() => {
               updateDescription(item.label);
               setItemTypeId(computeItemTypeId(item.label, itemData.weight)); // ← penting
-            }}            variant={isActive(item.label) ? "default" : "outline"}
+            }}
+            variant={isActive(item.label) ? "default" : "outline"}
             className={`rounded-full ${
               isActive(item.label)
                 ? "border-orange-500 bg-orange-500 text-white hover:bg-orange-400"
@@ -93,6 +95,7 @@ const ShipmentCategorySelector = () => {
             type="text"
             value={description}
             onChange={(e) => updateDescription(e.target.value)}
+            maxLength={50}
             placeholder="Ketik deskripsi..."
             className="w-full rounded-xl border border-gray-300 p-3 text-[#0B0C44] text-sm placeholder:text-gray-400"
           />
