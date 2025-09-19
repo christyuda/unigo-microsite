@@ -13,6 +13,7 @@ import ShipmentCategoryDrawer from "./shipment-category-drawer";
 import { useAtom } from "jotai";
 import { itemDataAtom, itemTypeIdAtom } from "@/atom/shipments-atom"; // or "@/atom/order-shipment-atom"
 import { Input } from "@/components/ui/input";
+import toast from "react-hot-toast";
 
 const quickCategories = [
   { label: "Dokumen", icon: <Archive size={16} /> },
@@ -47,6 +48,10 @@ const ShipmentCategorySelector = () => {
   const isActive = (label: string) => description === label;
 
   const updateDescription = (val: string) => {
+    if (val.length > 50) {
+      toast.error("Deskripsi maksimal 50 karakter.");
+      return;
+    }
     setItemData((prev) => ({ ...prev, description: val }));
   };
 

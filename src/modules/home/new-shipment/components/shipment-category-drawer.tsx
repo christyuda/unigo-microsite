@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 interface ShipmentCategoryDrawerProps {
   open: boolean;
@@ -69,6 +70,9 @@ const ShipmentCategoryDrawer = ({
   }, [open, initialSelected]);
 
   const handleConfirm = () => {
+    if (description.length > 50)
+      return toast("Deskripsi tidak boleh lebih dari 50 karakter.");
+
     if (selected === "Lainnya" && description.trim()) {
       onSelect({ label: "Lainnya", description: description.trim() });
     } else if (selected && selected !== "Lainnya") {
